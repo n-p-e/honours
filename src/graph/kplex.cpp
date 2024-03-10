@@ -68,6 +68,8 @@ KPlexDegenResult kPlexV2(const Graph &g, int64_t k) {
     }
     KPlexDegenResult solution = initialSolution;
 
+    cout << "Initial solution size = " << initialSize << endl;
+
     // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
     std::unordered_set<v_id> removed;
     for (v_id i = 0; i < size; i++) {
@@ -75,14 +77,19 @@ KPlexDegenResult kPlexV2(const Graph &g, int64_t k) {
     }
     cout << "deleted " << removed.size() << " vertices, size " << size << " -> "
          << (size - removed.size()) << endl;
-    auto ordering = degenOrdering(g);
+
+    // TODO: remap the vertex ids
+
+    vector<v_id> ordering = degenOrdering(g);
+    vector<v_id> degenRank(size, 0);
+    for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
 
     // Generate a subgraph
     for (v_id i = 0; i < size; i++) {
         if (removed.contains(i)) { continue; }
         vector<v_id> vertices;
-        for (v_id j = 0; j < size; j++) {
-            if (!(j == i || removed.contains(j))) { vertices.push_back(j); }
+        for (v_id j : g.neighbours(i)) {
+            if (!removed.contains(j) && degenRank[j] > degenRank[i]) { vertices.push_back(j); }
         }
         Graph subgraph = g.subgraph(vertices);
         auto newSolution = kPlexDegen(subgraph, k);

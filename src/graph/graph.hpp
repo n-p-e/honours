@@ -18,6 +18,7 @@ Graph readGraph(const std::string &path);
 class Graph {
 private:
     v_int size_;
+    e_int n_edges_;
     std::vector<Vertex> v;
     std::vector<std::vector<v_id>> adjs;
 
@@ -26,7 +27,11 @@ public:
     Graph(const Graph &) = default; // copy
     Graph(Graph &&) = default;      // move
 
-    uint64_t size() const;
+    v_int size() const;
+    e_int n_edges() const {
+        return n_edges_;
+    }
+
     const std::vector<v_id> &neighbours(v_id vertex) const;
     int64_t degreeOf(v_id vertex) const;
 

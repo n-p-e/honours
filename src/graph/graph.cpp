@@ -25,12 +25,12 @@ Graph readGraph(const std::string &path) {
     return graph;
 }
 
-Graph::Graph(int64_t size) : size_(size), v({}), adjs({}) {
+Graph::Graph(int64_t size) : size_(size), n_edges_(0), v({}), adjs({}) {
     adjs.resize(size);
     // not useful for now
     // for (int64_t i = 0; i < size; i++) { v.emplace_back(this, i); }
 }
-uint64_t Graph::size() const {
+v_int Graph::size() const {
     return size_;
 }
 int64_t Graph::degreeOf(v_id vertex) const {
@@ -40,6 +40,7 @@ const std::vector<v_id> &Graph::neighbours(v_id vertex) const {
     return adjs[vertex];
 }
 void Graph::addEdge(v_id v1, v_id v2) {
+    n_edges_++;
     adjs[v1].push_back(v2);
     adjs[v2].push_back(v1);
 }
@@ -67,14 +68,16 @@ std::vector<v_id> degenOrdering(const Graph &g) {
     GraphLinearHeap heap(g.size(), g.size(), degrees);
     for (v_id i = 0; i < g.size(); i++) {
         auto smallestDeg = heap.popMin();
-        result.push_back(smallestDeg.first);
+        v_id u = smallestDeg.first;
+        for (v_id v : g.neighbours(i)) { heap.decrement(v, 1); }
+        result.push_back(u);
     }
     return result;
 }
 
 
 std::ostream &operator<<(std::ostream &os, const Graph &graph) {
-    return os << "Graph{size=" << graph.size() << "}";
+    return os << "Graph{size=" << graph.size() << ",edges=" << graph.n_edges() << "}";
 }
 
 // std::vector<v_id> degenOrdering(const Graph &g) {
