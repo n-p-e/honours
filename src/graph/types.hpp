@@ -15,7 +15,7 @@ using e_int = int64_t;
 
 struct SubgraphResult {
     std::vector<v_id> subgraph;
-    v_int size;
+    v_int size = 0;
 };
 
 } // namespace gm

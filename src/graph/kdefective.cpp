@@ -122,7 +122,7 @@ kDefResult kDefDegen(Graph &g, v_int k) {
 }
 
 kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
-    kDefResult solution = kDefNaiveV2(g, k);
+    kDefResult solution{};
     v_int size = g.size();
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)

@@ -25,7 +25,7 @@ SubgraphResult pseudoCliqueNaive(v2::Graph &graph, double alpha) {
 }
 
 SubgraphResult pseudoClique(v2::Graph &graph, double alpha) {
-    SubgraphResult solution = pseudoCliqueNaive(graph, alpha);
+    SubgraphResult solution = {};
 
     v_int size = graph.size();
     auto ordering = v2::degenOrdering(graph);
@@ -65,11 +65,11 @@ SubgraphResult pseudoClique(v2::Graph &graph, double alpha) {
         auto subgraph = graph.subgraph(vertices, &vMap);
 
         auto newSolution = pseudoCliqueNaive(subgraph, alpha);
-        if (newSolution.subgraph.size() > solution.subgraph.size()) {
+        if (newSolution.size > solution.size) {
             // Map subgraph vertices back
             vector<v_id> reverseMap(size, -1);
             for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
-            for (size_t i = 0; i < newSolution.subgraph.size(); i++) {
+            for (size_t i = 0; i < newSolution.size; i++) {
                 newSolution.subgraph[i] = reverseMap[newSolution.subgraph[i]];
             }
             solution = std::move(newSolution);
