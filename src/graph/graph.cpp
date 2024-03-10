@@ -46,12 +46,18 @@ void Graph::addEdge(v_id v1, v_id v2) {
 }
 
 Graph Graph::subgraph(const std::vector<v_id> &vertices) const {
-    Graph result(this->size());
-    unordered_set<v_id> vertSet(vertices.cbegin(), vertices.cend());
+    // Map from old vertex id -> new vertex id
+    vector<v_id> vMap(this->size(), -1);
+    v_id nextId = 0;
+    for (v_id v : vertices) {
+        vMap[v] = nextId;
+        nextId++;
+    }
+    Graph result(vertices.size());
     for (v_id u : vertices) {
         for (v_id v : this->neighbours(u)) {
-            if (vertSet.contains(v) && u < v) { // avoid duplicate edges
-                result.addEdge(u, v);
+            if (vMap[v] >= 0 && u < v) { // avoid duplicate edges
+                result.addEdge(vMap[u], vMap[v]);
             }
         }
     }

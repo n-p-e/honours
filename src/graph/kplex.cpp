@@ -78,8 +78,6 @@ KPlexDegenResult kPlexV2(const Graph &g, int64_t k) {
     cout << "deleted " << removed.size() << " vertices, size " << size << " -> "
          << (size - removed.size()) << endl;
 
-    // TODO: remap the vertex ids
-
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0);
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
@@ -88,10 +86,16 @@ KPlexDegenResult kPlexV2(const Graph &g, int64_t k) {
     for (v_id i = 0; i < size; i++) {
         if (removed.contains(i)) { continue; }
         vector<v_id> vertices;
-        for (v_id j : g.neighbours(i)) {
+        vertices.push_back(i);
+        auto &neighbours = g.neighbours(i);
+        for (v_id j : neighbours) {
             if (!removed.contains(j) && degenRank[j] > degenRank[i]) { vertices.push_back(j); }
         }
+        if (vertices.size() < initialSize) {
+            continue;
+        }
         Graph subgraph = g.subgraph(vertices);
+        cout << "calculating subgraph (size=" << subgraph.size() << ")" << endl;
         auto newSolution = kPlexDegen(subgraph, k);
         if (newSolution.kPlex.size() > solution.kPlex.size()) {
             cout << "Found better solution" << endl;
