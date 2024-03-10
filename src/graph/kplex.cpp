@@ -74,10 +74,13 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     std::vector<int> removed(size, 0);
     int n_removed = 0;
     for (v_id i = 0; i < size; i++) {
-        if (g.degreeOf(i) < initialSize - k) { removed[i] = 1; n_removed ++; }
+        if (g.degreeOf(i) < initialSize - k) {
+            removed[i] = 1;
+            n_removed++;
+        }
     }
-    cout << "deleted " << n_removed << " vertices, size " << size << " -> "
-         << (size - n_removed) << endl;
+    cout << "deleted " << n_removed << " vertices, size " << size << " -> " << (size - n_removed)
+         << endl;
 
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
@@ -100,19 +103,21 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         auto &neighbours = g.neighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
-            if (!removed[j] && degenRank[j] > degenRank[i]) { included[j] = 1; }
-        }
-        if (twoHop) {
-            for (v_id j : neighbours) {
-                for (v_id k : g.neighbours(j)) {
-                    included[k] = 1;
+            if (!removed[j]) {
+                if (degenRank[j] < degenRank[i]) { break; }
+                included[j] = 1;
+                if (twoHop) {
+                    for (v_id k : g.neighbours(j)) {
+                        if (!removed[k]) {
+                            if (degenRank[k] < degenRank[j]) { break; }
+                            included[k] = 1;
+                        }
+                    }
                 }
             }
         }
         for (v_id j = 0; j < size; j++) {
-            if (included[j]) {
-                vertices.push_back(j);
-            }
+            if (included[j]) { vertices.push_back(j); }
         }
         if (vertices.size() < initialSize) { continue; }
 
