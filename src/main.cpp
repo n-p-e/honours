@@ -1,4 +1,5 @@
 #include "graph/graph.hpp"
+#include "graph/graphv2.hpp"
 #include "graph/kdefective.hpp"
 #include "graph/kplex.hpp"
 #include <boost/program_options.hpp>
@@ -67,7 +68,7 @@ int main(int argc, char **argv) {
         string graphPath = args["graph"].as<string>();
         string algo = args["algorithm"].as<string>();
         int k = args["k"].as<int>();
-        gm::Graph graph = gm::readGraph(graphPath);
+        gm::v2::GraphV2 graph = gm::v2::GraphV2::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         auto start = chrono::high_resolution_clock::now();
 

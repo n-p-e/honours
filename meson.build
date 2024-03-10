@@ -10,6 +10,8 @@ src = files([
     'src/main.cpp',
     'src/graph/graph.cpp',
     'src/graph/graph.hpp',
+    'src/graph/graphv2.cpp',
+    'src/graph/graphv2.hpp',
     'src/graph/kplex.cpp',
     'src/graph/kplex.hpp',
     'src/graph/kdefective.cpp',

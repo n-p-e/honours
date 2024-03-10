@@ -74,8 +74,13 @@ std::vector<v_id> degenOrdering(const Graph &g) {
     result.reserve(g.size());
     degrees.reserve(g.size());
 
-    for (v_id i = 0; i < g.size(); i++) { degrees.push_back(g.degreeOf(i)); }
-    GraphLinearHeap heap(g.size(), g.size(), degrees);
+    for (v_id i = 0; i < g.size(); i++) {
+        degrees.push_back(g.degreeOf(i));
+        cout << g.degreeOf(i) << ",";
+    }
+    cout << "\n"
+         << "n=" << g.size() << endl;
+    GraphLinearHeap heap(g.size(), g.size() + 1, degrees);
     for (v_id i = 0; i < g.size(); i++) {
         auto smallestDeg = heap.popMin();
         v_id u = smallestDeg.first;
