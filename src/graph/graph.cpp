@@ -39,6 +39,10 @@ int64_t Graph::degreeOf(v_id vertex) const {
 const std::vector<v_id> &Graph::neighbours(v_id vertex) const {
     return adjs[vertex];
 }
+void Graph::setNeighbours(v_id vertex, std::vector<v_id> newNeighbours) {
+    adjs[vertex] = newNeighbours;
+}
+
 void Graph::addEdge(v_id v1, v_id v2) {
     n_edges_++;
     adjs[v1].push_back(v2);

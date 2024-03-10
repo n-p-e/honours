@@ -33,6 +33,7 @@ public:
     }
 
     const std::vector<v_id> &neighbours(v_id vertex) const;
+    void setNeighbours(v_id vertex, std::vector<v_id> newNeighbours);
     int64_t degreeOf(v_id vertex) const;
 
     void addEdge(v_id v1, v_id v2);

@@ -13,7 +13,7 @@ struct KPlexDegenResult {
 
 KPlexDegenResult kPlexDegen(const Graph &g, int64_t k);
 
-KPlexDegenResult kPlexV2(const Graph &g, int64_t k);
+KPlexDegenResult kPlexV2(Graph &g, int64_t k);
 
 } // namespace gm
 

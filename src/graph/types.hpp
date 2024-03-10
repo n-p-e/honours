@@ -1,3 +1,6 @@
+#ifndef GM_TYPES_HPP
+#define GM_TYPES_HPP
+
 #include <cstdint>
 
 namespace gm {
@@ -10,3 +13,5 @@ using v_id = v_int;
 using e_int = int64_t;
 
 } // namespace gm
+
+#endif // GM_TYPES_HPP
