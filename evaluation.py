@@ -36,7 +36,8 @@ class Evaluation(TypedDict):
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "report":
+    action = sys.argv[1] if len(sys.argv) > 1 else 'evaluation_loop'
+    if action == "report":
         report()
     else:
         evaluation_loop()

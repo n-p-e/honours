@@ -3,6 +3,7 @@
 #include "graph/graphv2.hpp"
 #include "graph/types.hpp"
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;

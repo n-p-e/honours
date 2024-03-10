@@ -5,6 +5,8 @@
 #include <cmath>
 #include <vector>
 
+using std::vector;
+
 namespace gm {
 
 QuasiCliqueResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
@@ -22,7 +24,58 @@ QuasiCliqueResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
 }
 
 QuasiCliqueResult quasiClique(v2::Graph &graph, double alpha) {
-    return quasiCliqueNaive(graph, alpha);
+    QuasiCliqueResult solution{};
+
+    v_int size = graph.size();
+    auto ordering = v2::degenOrdering(graph);
+    vector<v_id> degenRank(size, 0);
+    vector<uint8_t> removed(size, 0);
+    for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i;}
+// order neighbours by degeneracy ordering (reversed)
+    for (v_id i = 0; i < size; i++) {
+        auto neighbours = graph.iterNeighbours(i);
+        std::sort(neighbours.begin(), neighbours.end(), [&](v_id v1, v_id v2) {
+            return degenRank[v1] > degenRank[v2];
+        });
+    }
+
+    // Generate a subgraph
+    for (v_id i = 0; i < size; i++) {
+        if (removed[i]) { continue; }
+        vector<v_id> vertices;
+        vector<int> included(size, 0);
+        included[i] = 1;
+        auto neighbours = graph.iterNeighbours(i);
+        // Add neighbours and two-hop neighbours to subgraph
+        for (v_id j : neighbours) {
+            if (!removed[j]) {
+                if (degenRank[j] < degenRank[i]) { break; }
+                included[j] = 1;
+            }
+        }
+        for (v_id j = 0; j < size; j++) {
+            if (included[j]) { vertices.push_back(j); }
+        }
+        // if (vertices.size() < initialSize) { continue; }
+
+        // Create subgraph
+        vector<v_id> vMap;
+
+        auto subgraph = graph.subgraph(vertices, &vMap);
+
+        auto newSolution = quasiCliqueNaive(subgraph, alpha);
+        if (newSolution.quasiClique.size() > solution.quasiClique.size()) {
+            // Map subgraph vertices back
+            vector<v_id> reverseMap(size, -1);
+            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
+            for (size_t i = 0; i < newSolution.quasiClique.size(); i++) {
+                newSolution.quasiClique[i] = reverseMap[newSolution.quasiClique[i]];
+            }
+            // cout << "Found better solution" << endl;
+            solution = std::move(newSolution);
+        }
+    }
+    return solution;
 }
 
 bool validateQuasiClique(v2::Graph &graph, const std::vector<v_id> &quasiClique, double alpha) {
