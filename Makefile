@@ -1,9 +1,14 @@
+LLVM := $(shell test -d /opt/homebrew/opt/llvm/bin && echo /opt/homebrew/opt/llvm/bin)
+export CC := $(if $(LLVM),$(LLVM)/clang,$(CC))
+export CXX := $(if $(LLVM),$(LLVM)/clang++,$(CXX))
+
 all: builddir main
+
+.PHONY: main run clean rel .FORCE
 
 builddir:
 	meson setup builddir -Db_sanitize=address
 
-.PHONY: main run clean .FORCE
 main: builddir .FORCE
 	meson compile -C builddir
 
