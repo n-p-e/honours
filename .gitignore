@@ -4,4 +4,4 @@
 /.vscode
 dataset/
 
-output*.json
+/output*.json

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
+import io
+import json
+import os
+import re
 import subprocess
 import sys
-import os
-import io
-import re
-import json
+from pathlib import Path
 from typing import TypedDict
 
 data_dir = Path(__file__).parent / "dataset"

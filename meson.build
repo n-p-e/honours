@@ -18,10 +18,6 @@ src = files([
 cxx = meson.get_compiler('cpp')
 deps = [dependency('boost', modules: ['program_options'])]
 
-if get_option('buildtype') == 'release'
-  add_project_arguments('-O3', language : 'cpp')
-endif
-
 executable('main',
     src,
     dependencies: deps,
