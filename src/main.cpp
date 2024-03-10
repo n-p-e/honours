@@ -34,9 +34,13 @@ int main(int argc, char **argv) {
         result = gm::kPlexDegen(graph, k);
         cout << "[kPlexDegen] Found k-plex of size " << result.kPlex.size() << "\n"
              << "    upper bound: " << result.ub << endl;
-    } else {
-        result = gm::kPlexV2(graph, k);
+    } else if (algo == "v2") {
+        result = gm::kPlexV2(graph, k, false);
         cout << "[kPlexV2] Found k-plex of size " << result.kPlex.size() << "\n"
+             << "    upper bound: " << result.ub << endl;
+    } else {
+        result = gm::kPlexV2(graph, k, true);
+        cout << "[kPlexTwoHop] Found k-plex of size " << result.kPlex.size() << "\n"
              << "    upper bound: " << result.ub << endl;
     }
     auto end = chrono::high_resolution_clock::now();

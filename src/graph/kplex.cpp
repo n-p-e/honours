@@ -58,7 +58,7 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
     return result;
 }
 
-KPlexDegenResult kPlexV2(Graph &g, int64_t k) {
+KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     v_int size = g.size();
     auto initialSolution = kPlexDegen(g, k);
     v_int initialSize = initialSolution.kPlex.size();
@@ -95,10 +95,24 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k) {
     for (v_id i = 0; i < size; i++) {
         if (removed[i]) { continue; }
         vector<v_id> vertices;
-        vertices.push_back(i);
+        vector<int> included(size, 0);
+        included[i] = 1;
         auto &neighbours = g.neighbours(i);
+        // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
-            if (!removed[j] && degenRank[j] > degenRank[i]) { vertices.push_back(j); }
+            if (!removed[j] && degenRank[j] > degenRank[i]) { included[j] = 1; }
+        }
+        if (twoHop) {
+            for (v_id j : neighbours) {
+                for (v_id k : g.neighbours(j)) {
+                    included[k] = 1;
+                }
+            }
+        }
+        for (v_id j = 0; j < size; j++) {
+            if (included[j]) {
+                vertices.push_back(j);
+            }
         }
         if (vertices.size() < initialSize) { continue; }
 
