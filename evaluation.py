@@ -15,6 +15,8 @@ import pandas as pd
 
 data_dir = Path(__file__).parent / "dataset"
 algo = "v3"
+k = 5
+prog = "kdef"
 timeout_sec = 300
 max_workers = 8
 exact_prog = Path(__file__).parent.parent / "Maximum-kPlex" / "kPlexS"
@@ -58,7 +60,9 @@ def evaluation_loop():
         for dataset in dataset_files:
 
             def task(dataset):
-                result = evaluate(exe, dataset, algo=algo, timeout_sec=timeout_sec)
+                result = evaluate(
+                    exe, dataset, prog=prog, algo=algo, k=k, timeout_sec=timeout_sec,
+                )
                 results.append(result)
 
             future = pool.submit(task, dataset)
@@ -78,14 +82,14 @@ def compile():
 
 
 def evaluate(
-    exe: Path, dataset_file: Path, algo="v2", k=2, timeout_sec=30
+    exe: Path, dataset_file: Path, prog="kplex", algo="v2", k: int=5, timeout_sec=30
 ) -> Optional[Evaluation]:
     dataset_name = str(dataset_file).removesuffix("/edges.txt")
     n, m = dataset_size(dataset_file)
     print(f"[Evaluate] Running on dataset {dataset_name} ({n=}, {m=})")
     try:
         process = subprocess.run(
-            map(str, [exe, "-a", algo, "-k", k, "-g", dataset_file]),
+            map(str, [exe, "-p", prog, "-a", algo, "-k", k, "-g", dataset_file]),
             capture_output=True,
             encoding="utf-8",
             timeout=timeout_sec,
@@ -112,7 +116,15 @@ def evaluate(
     match = re.search(r"Initial solution size = (\d+)", output, re.MULTILINE)
     if match is not None:
         initial_size = int(match.group(1))
-    match = re.search(r"Found k-plex of size (\d+)", output, re.MULTILINE)
+    match = re.search(
+        (
+            r"Found k-plex of size (\d+)"
+            if prog == "kplex"
+            else r"found k-defective-clique of size (\d+)"
+        ),
+        output,
+        re.MULTILINE,
+    )
     if match is not None:
         solution_size = int(match.group(1))
 
@@ -128,22 +140,25 @@ def evaluate(
 
     exact_size = None
     exact_runtime_ms = None
-    try:
-        exact_process = subprocess.run(
-            map(str, [exact_prog, "-g", dataset_name, "-k", k]),
-            capture_output=True,
-            encoding="utf-8",
-            timeout=timeout_sec,
+    if prog == "kplex":
+        try:
+            exact_process = subprocess.run(
+                map(str, [exact_prog, "-g", dataset_name, "-k", k]),
+                capture_output=True,
+                encoding="utf-8",
+                timeout=timeout_sec,
+            )
+        except subprocess.TimeoutExpired:
+            pass
+        exact_output = str(exact_process.stdout)
+        match = re.search(
+            r"Maximum kPlex Size: (\d+), Total Time: ([\d\.,]+)",
+            exact_output,
+            re.MULTILINE,
         )
-    except subprocess.TimeoutExpired:
-        pass
-    exact_output = str(exact_process.stdout)
-    match = re.search(
-        r"Maximum kPlex Size: (\d+), Total Time: ([\d\.,]+)", exact_output, re.MULTILINE
-    )
-    if match:
-        exact_size = int(match.group(1))
-        exact_runtime_ms = float(match.group(2).replace(",", "")) / 1000
+        if match:
+            exact_size = int(match.group(1))
+            exact_runtime_ms = float(match.group(2).replace(",", "")) / 1000
     print(
         f"[Evaluate] done, size={solution_size} runtime={runtime_ms:.3f}ms exact_size={exact_size}"
     )
