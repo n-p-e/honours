@@ -14,12 +14,12 @@ struct kDefResult {
 };
 
 kDefResult kDefNaive(Graph &g, v_int k);
-kDefResult kDefNaive(v2::GraphV2 &g, v_int k);
+kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k);
 kDefResult kDefDegen(Graph &g, v_int k);
-kDefResult kDefDegen(v2::GraphV2 &g, v_int k);
+kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k);
 
 bool checkKDef(Graph &g, const std::vector<v_id> &vs, v_int k);
-bool checkKDef(v2::GraphV2 &g, const std::vector<v_id> &vs, v_int k);
+bool checkKDefV2(v2::GraphV2 &g, const std::vector<v_id> &vs, v_int k);
 
 } // namespace gm
 

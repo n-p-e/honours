@@ -101,11 +101,15 @@ int main(int argc, char **argv) {
         auto start = chrono::high_resolution_clock::now();
 
         gm::kDefResult result;
-        result = gm::kDefDegen(graph, k);
+        result = gm::kDefDegenV2(graph, k);
         cout << "[kDef] found k-defective-clique of size " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
              << " microseconds" << endl;
+        if (!gm::checkKDefV2(graph, result.kDefective, result.size)) {
+            cout << "ERROR: !!!!!!Invalid k-defective-clique!!!!!!" << endl;
+            exit(1);
+        }
     }
 
     return 0;

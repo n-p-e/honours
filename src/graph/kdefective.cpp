@@ -27,7 +27,7 @@ kDefResult kDefNaive(Graph &g, v_int k) {
     return result;
 }
 
-kDefResult kDefNaive(v2::GraphV2 &g, v_int k) {
+kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
     kDefResult result{};
     v_int size = g.size();
     auto ordering = degenOrdering(g);
@@ -35,7 +35,7 @@ kDefResult kDefNaive(v2::GraphV2 &g, v_int k) {
     for (v_int idx = size - 1; idx >= 0; idx--) {
         v_id u = ordering[idx];
         solution.push_back(u);
-        if (!checkKDef(g, solution, k)) {
+        if (!checkKDefV2(g, solution, k)) {
             solution.pop_back();
             break;
         }
@@ -120,7 +120,7 @@ kDefResult kDefDegen(Graph &g, v_int k) {
     return solution;
 }
 
-kDefResult kDefDegen(v2::GraphV2 &g, v_int k) {
+kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
     kDefResult solution{};
     v_int size = g.size();
     vector<v_id> ordering = degenOrdering(g);
@@ -134,7 +134,6 @@ kDefResult kDefDegen(v2::GraphV2 &g, v_int k) {
         std::sort(neighbours.begin(), neighbours.end(), [&](v_id v1, v_id v2) {
             return degenRank[v1] > degenRank[v2];
         });
-        // g.setNeighbours(i, neighbours);
     }
 
     // Generate a subgraph
@@ -181,7 +180,7 @@ kDefResult kDefDegen(v2::GraphV2 &g, v_int k) {
         //     }
         // }
 
-        auto newSolution = kDefNaive(subgraph, k);
+        auto newSolution = kDefNaiveV2(subgraph, k);
         if (newSolution.kDefective.size() > solution.kDefective.size()) {
             // Map subgraph vertices back
             vector<v_id> reverseMap(size, -1);
@@ -211,7 +210,7 @@ bool checkKDef(Graph &g, const std::vector<v_id> &vs, v_int k) {
     return true;
 }
 
-bool checkKDef(v2::GraphV2 &g, const std::vector<v_id> &vs, v_int k) {
+bool checkKDefV2(v2::GraphV2 &g, const std::vector<v_id> &vs, v_int k) {
     v_int size = g.size();
     v_int target = vs.size() * (vs.size() - 1) / 2;
     std::vector<uint8_t> included(size, 0);
