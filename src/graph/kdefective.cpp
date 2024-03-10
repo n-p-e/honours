@@ -45,6 +45,7 @@ kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
     return result;
 }
 
+// not used, only v2 is used for now
 kDefResult kDefDegen(Graph &g, v_int k) {
     kDefResult solution{};
     v_int size = g.size();
@@ -120,12 +121,11 @@ kDefResult kDefDegen(Graph &g, v_int k) {
     return solution;
 }
 
-kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
+kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
     kDefResult solution = kDefNaiveV2(g, k);
     v_int size = g.size();
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
-    std::vector<uint8_t> removed(size, 0);
 
 
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
@@ -139,16 +139,20 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
 
     // Generate a subgraph
     for (v_id i = 0; i < size; i++) {
-        if (removed[i] || g.degree(i) <= solution.size) { continue; }
+        if (g.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;
         vector<uint8_t> included(size, 0);
         included[i] = 1;
         auto neighbours = g.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
-            if (!removed[j]) {
-                if (degenRank[j] < degenRank[i]) { break; }
-                included[j] = 1;
+            if (degenRank[j] < degenRank[i]) { break; }
+            included[j] = 1;
+            if (twoHop) {
+                for (v_int k : g.iterNeighbours(j)) {
+                    if (degenRank[k] < degenRank[i]) { break; }
+                    included[k] = 1;
+                }
             }
         }
         for (v_id j = 0; j < size; j++) {

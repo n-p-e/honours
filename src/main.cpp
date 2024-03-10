@@ -110,8 +110,11 @@ int main(int argc, char **argv) {
         cout << "[input graph] " << graph << endl;
         auto start = chrono::high_resolution_clock::now();
 
+        if (algo == "twohop") {
+            cout << "[kDef] using 2-hop neighbours\n";
+        }
         gm::kDefResult result;
-        result = gm::kDefDegenV2(graph, k);
+        result = gm::kDefDegenV2(graph, k, algo == "twohop");
         cout << "[kDef] found k-defective-clique of size " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()

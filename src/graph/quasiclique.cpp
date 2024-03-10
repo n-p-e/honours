@@ -29,7 +29,6 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha) {
     v_int size = graph.size();
     auto ordering = v2::degenOrdering(graph);
     vector<v_id> degenRank(size, 0);
-    vector<uint8_t> removed(size, 0);
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
     for (v_id i = 0; i < size; i++) {
@@ -41,17 +40,15 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha) {
 
     // Generate a subgraph
     for (v_id i = 0; i < size; i++) {
-        if (removed[i] || graph.degree(i) <= solution.size) { continue; }
+        if (graph.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;
         vector<int> included(size, 0);
         included[i] = 1;
         auto neighbours = graph.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
-            if (!removed[j]) {
-                if (degenRank[j] < degenRank[i]) { break; }
-                included[j] = 1;
-            }
+            if (degenRank[j] < degenRank[i]) { break; }
+            included[j] = 1;
         }
         for (v_id j = 0; j < size; j++) {
             if (included[j]) { vertices.push_back(j); }
