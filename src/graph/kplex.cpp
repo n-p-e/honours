@@ -18,7 +18,7 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
     int64_t size = g.size();
 
     std::vector<v_id> degrees;
-    std::unordered_set<v_id> removed;
+    std::vector<int> removed(size, 0);
     degrees.reserve(size);
     for (v_id i = 0; i < size; i++) { degrees.push_back(g.degreeOf(i)); }
     GraphLinearHeap heap(g.size(), g.size(), degrees);
@@ -34,7 +34,7 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
         if (minDeg + k >= size - i + 1 && size - i + 1 > result.kPlex.size()) {
             result.kPlex = {};
             for (v_id j = 0; j < size; j++) {
-                if (!removed.contains(j)) { result.kPlex.push_back(j); }
+                if (!removed[j]) { result.kPlex.push_back(j); }
             }
         }
 
@@ -45,15 +45,15 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
 
         // Line 9
         // Remove current node to start next iteration
-        auto neighbours = g.neighbours(v);
+        auto &neighbours = g.neighbours(v);
         for (v_id w : neighbours) {
-            if (!removed.contains(w)) {
+            if (!removed[w]) {
                 degrees[w] -= 1;
                 auto res = heap.decrement(w, 1);
                 GM_ASSERT(res, "should success");
             }
         }
-        removed.insert(v);
+        removed[v] = 1;
     }
     return result;
 }
@@ -72,14 +72,15 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k) {
 
     // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
     std::vector<int> removed(size, 0);
+    int n_removed = 0;
     for (v_id i = 0; i < size; i++) {
-        if (g.degreeOf(i) < initialSize - k) { removed[i] = 1; }
+        if (g.degreeOf(i) < initialSize - k) { removed[i] = 1; n_removed ++; }
     }
-    cout << "deleted " << removed.size() << " vertices, size " << size << " -> "
-         << (size - removed.size()) << endl;
+    cout << "deleted " << n_removed << " vertices, size " << size << " -> "
+         << (size - n_removed) << endl;
 
     vector<v_id> ordering = degenOrdering(g);
-    vector<v_id> degenRank(size, 0);  // vertex id -> degeneracy rank from 0 to (n - 1)
+    vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
     for (v_id i = 0; i < size; i++) {
@@ -113,9 +114,11 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k) {
         for (v_id u : vertices) {
             for (v_id v : g.neighbours(u)) {
                 // Optimize with degenRank as the neighbours arrays are ordered
-                if (vMap[u] >= 0 && vMap[v] >= 0 && degenRank[u] < degenRank[v]) {
-                    // cerr << "addEdge " << vMap[u] << " " << vMap[v] << endl;
-                    subgraph.addEdge(vMap[u], vMap[v]);
+                if (degenRank[u] < degenRank[v]) {
+                    if (vMap[v] >= 0) {
+                        // cerr << "addEdge " << vMap[u] << " " << vMap[v] << endl;
+                        subgraph.addEdge(vMap[u], vMap[v]);
+                    }
                 } else {
                     break;
                 }
