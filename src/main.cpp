@@ -11,13 +11,13 @@
 #include "graph/graphv2.hpp"
 #include "graph/kdefective.hpp"
 #include "graph/kplex.hpp"
-#include "graph/quasiclique.hpp"
 #include "graph/pseudoclique.hpp"
+#include "graph/quasiclique.hpp"
 #include "util.hpp"
 
 using namespace std;
 
-const char *USAGE = //
+static const char *USAGE = //
     "Usage:\n"
     "    --help, -h     print help\n"
     "    -p             select program to run\n"
@@ -25,7 +25,7 @@ const char *USAGE = //
     "    -a             algorithm version\n";
 
 constexpr int LONGOPT_ALPHA = 10001;
-option longopts[] = {
+static option longopts[] = {
     {"help", no_argument, NULL, 'h'},
     {"program", required_argument, NULL, 'p'},
     {"graph", required_argument, NULL, 'g'},
@@ -110,16 +110,14 @@ int main(int argc, char **argv) {
         cout << "[input graph] " << graph << endl;
         auto start = chrono::high_resolution_clock::now();
 
-        if (algo == "twohop") {
-            cout << "[kDef] using 2-hop neighbours\n";
-        }
+        if (algo == "twohop") { cout << "[kDef] using 2-hop neighbours\n"; }
         gm::kDefResult result;
         result = gm::kDefDegenV2(graph, k, algo == "twohop");
         cout << "[kDef] found k-defective-clique of size " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
              << " microseconds" << endl;
-        if (!gm::checkKDefV2(graph, result.kDefective, result.size)) {
+        if (!gm::checkKDefV2(graph, result.kDefective, k)) {
             cout << "ERROR: !!!!!!Invalid k-defective-clique!!!!!!" << endl;
             exit(1);
         }
@@ -133,6 +131,10 @@ int main(int argc, char **argv) {
         cout << format("[quasiClique] alpha={}\n", alpha);
         auto result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha); });
         cout << format("[quasiClique] result size {}\n", result.size);
+        if (!gm::validateQuasiClique(graph, result.subgraph, alpha)) {
+            cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;
+            exit(1);
+        }
     } else if (program == "pseudo") {
         if (!(0 < alpha && alpha < 1)) {
             cout << "ERROR: provide --alpha as a number between 0 and 1" << endl;
@@ -143,6 +145,10 @@ int main(int argc, char **argv) {
         cout << format("[pseudoClique] alpha={}\n", alpha);
         auto result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha); });
         cout << format("[pseudoClique] result size {}\n", result.size);
+        if (!gm::validatePseudoClique(graph, result.subgraph, alpha)) {
+            cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;
+            exit(1);
+        }
     }
 
     return 0;

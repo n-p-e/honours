@@ -73,6 +73,7 @@ using Graph = GraphV2;
 std::vector<v_id> degenOrdering(GraphV2 &g);
 // Subgraph subgraphDegen(GraphV2 &g, const std::vector<v_int> &vertices);
 
+// not used
 class Subgraph {
 public:
     inline Subgraph(v_int n) : n(n) {}
