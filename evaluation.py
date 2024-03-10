@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TypedDict
 
 data_dir = Path(__file__).parent / "dataset"
-algo = "v3"
+algo = "v2"
 timeout_sec = 120
 
 

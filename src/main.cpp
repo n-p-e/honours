@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
     // clang-format off
     desc.add_options()
         ("help", "help message")
-        ("algorithm,a", po::value<string>()->default_value("v2"), "select algorithm [v1 / v2(default)]")
+        ("algorithm,a", po::value<string>()->default_value("v2"), "select algorithm [v1 / v2(default) / v3]")
         ("graph,g", po::value<string>(), "path for graph file")
         ("k,k", po::value<int>())
         ;

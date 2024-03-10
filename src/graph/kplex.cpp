@@ -109,7 +109,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
                 if (twoHop) {
                     for (v_id k : g.neighbours(j)) {
                         if (!removed[k]) {
-                            if (degenRank[k] < degenRank[j]) { break; }
+                            if (degenRank[k] < degenRank[i]) { break; }
                             included[k] = 1;
                         }
                     }
