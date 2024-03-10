@@ -16,12 +16,6 @@ class Vertex;
 Graph readGraph(const std::string &path);
 
 class Graph {
-private:
-    v_int size_;
-    e_int n_edges_;
-    std::vector<Vertex> v;
-    std::vector<std::vector<v_id>> adjs;
-
 public:
     explicit Graph(int64_t size);
     Graph(const Graph &) = default; // copy
@@ -42,22 +36,28 @@ public:
     Graph subgraph(const std::vector<v_id> &vertices) const;
 
     friend std::ostream &operator<<(std::ostream &os, const Graph &graph);
+
+private:
+    v_int size_;
+    e_int n_edges_;
+    std::vector<Vertex> v;
+    std::vector<std::vector<v_id>> adjs;
 };
 
 /// Calculate a degeneracy ordering of a graph
 std::vector<v_id> degenOrdering(const Graph &g);
 
 class Vertex {
-private:
-    Graph *graph;
-    v_id id;
-
 public:
     inline Vertex(Graph *graph, v_id id) : graph(graph), id(id) {}
     inline v_id getId() const {
         return this->id;
     }
     friend std::ostream &operator<<(std::ostream &os, const Vertex &node);
+
+private:
+    Graph *graph;
+    v_id id;
 };
 
 
