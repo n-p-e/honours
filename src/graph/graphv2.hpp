@@ -7,6 +7,7 @@
 
 namespace gm::v2 {
 
+/// A more efficient graph implementation.
 class GraphV2 {
     class NeighboursRange {
     public:

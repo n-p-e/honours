@@ -1,6 +1,7 @@
 #ifndef GM_UTIL_HPP
 #define GM_UTIL_HPP
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -20,6 +21,17 @@ void printVector(const std::vector<T> &vec) {
         std::cout << v;
     }
     std::cout << "]" << std::endl;
+}
+
+template<class F>
+auto printTimer(F func) -> decltype(func()) {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto r = func();
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "[timer] "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+              << " microseconds" << std::endl;
+    return std::move(r);
 }
 
 } // namespace gm

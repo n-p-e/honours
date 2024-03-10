@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -10,6 +11,8 @@
 #include "graph/graphv2.hpp"
 #include "graph/kdefective.hpp"
 #include "graph/kplex.hpp"
+#include "graph/quasiclique.hpp"
+#include "util.hpp"
 
 using namespace std;
 
@@ -20,11 +23,13 @@ const char *USAGE = //
     "    -g             path to input graph\n"
     "    -a             algorithm version\n";
 
+constexpr int LONGOPT_ALPHA = 10001;
 option longopts[] = {
     {"help", no_argument, NULL, 'h'},
     {"program", required_argument, NULL, 'p'},
     {"graph", required_argument, NULL, 'g'},
     {"algorithm", required_argument, NULL, 'a'},
+    {"alpha", required_argument, NULL, LONGOPT_ALPHA},
     {0, 0, 0, 0}, // end of args
 };
 
@@ -32,6 +37,7 @@ int main(int argc, char **argv) {
     int ch, k = 0;
     bool help = false;
     string program = "kplex", graphPath, algo = "v2";
+    double alpha = 0.; // alpha for quasi-clique
 
     while ((ch = getopt_long(argc, argv, "g:a:p:k:h", longopts, NULL)) != -1) {
         // cout << std::format("{} {}\n", char(ch), optarg ? optarg : "");
@@ -50,6 +56,9 @@ int main(int argc, char **argv) {
             break;
         case 'k':
             k = strtol(optarg, NULL, 10);
+            break;
+        case LONGOPT_ALPHA:
+            alpha = strtod(optarg, NULL);
             break;
         default:
             help = true;
@@ -96,7 +105,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     } else if (program == "kdef") {
-        gm::v2::GraphV2 graph = gm::v2::GraphV2::readFromFile(graphPath);
+        gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         auto start = chrono::high_resolution_clock::now();
 
@@ -110,6 +119,18 @@ int main(int argc, char **argv) {
             cout << "ERROR: !!!!!!Invalid k-defective-clique!!!!!!" << endl;
             exit(1);
         }
+    } else if (program == "quasi") {
+        if (!(0 < alpha && alpha < 1)) {
+            cout << "ERROR: provide --alpha as a number between 0 and 1" << endl;
+            exit(1);
+        }
+        gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
+        cout << "[input graph] " << graph << endl;
+        cout << format("[quasiClique] alpha={}\n", alpha);
+        auto result = gm::printTimer([&]() {
+            return gm::quasiClique(graph, alpha);
+        });
+        cout << format("[quasiClique] result size {}\n", result.size);
     }
 
     return 0;
