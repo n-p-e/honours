@@ -15,6 +15,9 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k);
 
 KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop);
 
+bool validateKPlex(const Graph &g, std::vector<v_id> kplex, int k);
+
+
 } // namespace gm
 
 #endif // GM_KPLEX_HPP

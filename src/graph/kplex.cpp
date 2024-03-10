@@ -1,6 +1,7 @@
 #include "graph/kplex.hpp"
 
 #include "graph/graph.hpp"
+#include "graph/types.hpp"
 #include "heap.hpp"
 #include "util.hpp"
 #include <algorithm>
@@ -149,9 +150,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         if (newSolution.kPlex.size() > solution.kPlex.size()) {
             // Map subgraph vertices back
             vector<v_id> reverseMap(size, -1);
-            for (v_id original: vertices) {
-                reverseMap[vMap[original]] = original;
-            }
+            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
             for (size_t i = 0; i < newSolution.kPlex.size(); i++) {
                 newSolution.kPlex[i] = reverseMap[newSolution.kPlex[i]];
             }
@@ -161,6 +160,26 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     }
 
     return solution;
+}
+
+bool validateKPlex(const Graph &g, std::vector<v_id> kplex, int k) {
+    v_int size = g.size();
+    std::vector<int> isInKplex(size, 0);
+    for (v_id u : kplex) {
+        isInKplex[u] = 1;
+    }
+
+    for (size_t i = 0; i < kplex.size(); i++) {
+        v_id u = kplex[i];
+        int numConnections = 0;
+        for (v_id v : g.neighbours(u)) {
+            if (isInKplex[v]) { numConnections++; }
+        }
+        if (numConnections < kplex.size() - k) {
+            return false;
+        }
+    }
+    return true;
 }
 
 

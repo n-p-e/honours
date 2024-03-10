@@ -55,6 +55,10 @@ int main(int argc, char **argv) {
         }
     }
     cout << endl;
+    if (!gm::validateKPlex(graph, result.kPlex, k)) {
+        cout << "ERROR: !!!!!!Invalid kplex!!!!!!" << endl;
+        exit(1);
+    }
 
     return 0;
 }

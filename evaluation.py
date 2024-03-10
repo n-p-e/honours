@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import TypedDict
 
+import pandas as pd
+
 data_dir = Path(__file__).parent / "dataset"
 algo = "v2"
 timeout_sec = 120
@@ -26,6 +28,22 @@ class Evaluation(TypedDict):
 
 
 def main():
+    if sys.argv[1] == "report":
+        print("Report")
+        report_path = sys.argv[2]
+        df = pd.read_json(
+            report_path, dtype={"initial_size": "int", "solution_size": "int"}
+        )
+        improved = df[df["improved_solution"]]
+        print(
+            f"({len(improved)}/{len(df)}) {len(improved) / len(df)  * 100:.3f}% of improved solution"
+        )
+        print(improved)
+    else:
+        evaluation_loop()
+
+
+def evaluation_loop():
     os.chdir(Path(__file__).parent)
     dataset_files = []
     data_dirs = sys.argv[1:]
