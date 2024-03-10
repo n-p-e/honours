@@ -8,12 +8,7 @@
 
 namespace gm {
 
-struct QuasiCliqueResult {
-    std::vector<v_id> quasiClique;
-    v_int size;
-};
-
-QuasiCliqueResult quasiClique(v2::Graph &graph, double alpha);
+SubgraphResult quasiClique(v2::Graph &graph, double alpha);
 
 bool validateQuasiClique(v2::Graph &graph, const std::vector<v_id> &quasiClique, double alpha);
 

@@ -12,6 +12,7 @@
 #include "graph/kdefective.hpp"
 #include "graph/kplex.hpp"
 #include "graph/quasiclique.hpp"
+#include "graph/pseudoclique.hpp"
 #include "util.hpp"
 
 using namespace std;
@@ -127,10 +128,18 @@ int main(int argc, char **argv) {
         gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         cout << format("[quasiClique] alpha={}\n", alpha);
-        auto result = gm::printTimer([&]() {
-            return gm::quasiClique(graph, alpha);
-        });
+        auto result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha); });
         cout << format("[quasiClique] result size {}\n", result.size);
+    } else if (program == "pseudo") {
+        if (!(0 < alpha && alpha < 1)) {
+            cout << "ERROR: provide --alpha as a number between 0 and 1" << endl;
+            exit(1);
+        }
+        gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
+        cout << "[input graph] " << graph << endl;
+        cout << format("[pseudoClique] alpha={}\n", alpha);
+        auto result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha); });
+        cout << format("[pseudoClique] result size {}\n", result.size);
     }
 
     return 0;

@@ -1,6 +1,7 @@
 project(
     'graph-mining',
     'cpp',
+    version: '0.0.1',
     default_options: {
         'cpp_std': 'c++20',
         # 'warning_level': '2',
@@ -19,6 +20,8 @@ src = files([
     'src/graph/kdefective.hpp',
     'src/graph/quasiclique.cpp',
     'src/graph/quasiclique.hpp',
+    'src/graph/pseudoclique.cpp',
+    'src/graph/pseudoclique.hpp',
     'src/heap.hpp',
 ])
 
