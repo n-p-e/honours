@@ -3,12 +3,13 @@
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <format>
 
 #include "graph/types.hpp"
 #include "heap.hpp"
@@ -72,22 +73,25 @@ GraphV2
 GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOut /* = nullptr */) {
     // Map from old vertex id -> new vertex id
     vector<v_int> vMap(this->size(), -1);
+    auto verticesSorted = vertices;
+    std::sort(verticesSorted.begin(), verticesSorted.end());
     v_int nextId = 0;
     for (v_int v : vertices) {
         vMap[v] = nextId;
         nextId++;
     }
-    std::vector<pair<v_int, v_int>> edges;
-    for (v_int u : vertices) {
+    static std::vector<pair<v_int, v_int>> edges;
+    edges.clear();
+    for (v_int u : verticesSorted) {
         for (v_int v : this->iterNeighbours(u)) {
-            if (vMap[v] >= 0 && u < v) { // avoid duplicate edges
-                edges.push_back(make_pair(vMap[u], vMap[v]));
-                edges.push_back(make_pair(vMap[v], vMap[u]));
+            if (vMap[v] >= 0) {
+                edges.push_back(make_pair(vMap[u], vMap[v])); // reverse will also be pushed
+                // edges.push_back(make_pair(vMap[v], vMap[u]));
             }
         }
     }
 
-    std::sort(edges.begin(), edges.end());
+    // std::sort(edges.begin(), edges.end());
 
     GraphV2 g{v_int(vertices.size()), v_int(edges.size() / 2)};
     memset(g.off, -1, sizeof(v_int) * g.size());
@@ -130,6 +134,17 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
         result.push_back(u);
     }
     return result;
+}
+
+// maybe not useful
+Subgraph subgraphDegen(GraphV2 &g, int n, v_int *vertices, v_int *vertMap, v_int *degrees) {
+    // int m = reduce(degrees, degrees + n, 0, std::plus()) / 2;
+    Subgraph s{n};
+    s.e = g.e;
+    s.off = g.off;
+    s.vertMap = vertMap;
+    s.deg = degrees;
+    return s;
 }
 
 

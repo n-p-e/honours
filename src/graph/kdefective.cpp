@@ -3,7 +3,6 @@
 #include "graph/graphv2.hpp"
 #include "graph/types.hpp"
 #include <iostream>
-#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -122,11 +121,12 @@ kDefResult kDefDegen(Graph &g, v_int k) {
 }
 
 kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
-    kDefResult solution{};
+    kDefResult solution = kDefNaiveV2(g, k);
     v_int size = g.size();
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
-    std::vector<int> removed(size, 0);
+    std::vector<uint8_t> removed(size, 0);
+
 
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
@@ -139,9 +139,9 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
 
     // Generate a subgraph
     for (v_id i = 0; i < size; i++) {
-        if (removed[i]) { continue; }
+        if (removed[i] || g.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;
-        vector<int> included(size, 0);
+        vector<uint8_t> included(size, 0);
         included[i] = 1;
         auto neighbours = g.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
@@ -154,32 +154,11 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k) {
         for (v_id j = 0; j < size; j++) {
             if (included[j]) { vertices.push_back(j); }
         }
-        // if (vertices.size() < initialSize) { continue; }
+        if (vertices.size() < solution.size) { continue; }
 
         // Create subgraph
         vector<v_id> vMap;
-
         auto subgraph = g.subgraph(vertices, &vMap);
-        // Graph subgraph(vertices.size());
-        // vector<v_id> vMap(size, -1);
-        // v_id nextId = 0;
-        // for (v_id v : vertices) {
-        //     vMap[v] = nextId;
-        //     nextId++;
-        // }
-        // for (v_id u : vertices) {
-        //     for (v_id v : g.iterNeighbours(u)) {
-        //         // Optimize with degenRank as the neighbours arrays are ordered
-        //         if (degenRank[u] < degenRank[v]) {
-        //             if (vMap[v] >= 0) {
-        //                 cerr << "addEdge " << vMap[u] << " " << vMap[v] << endl;
-        //                 subgraph.addEdge(vMap[u], vMap[v]);
-        //             }
-        //         } else {
-        //             break;
-        //         }
-        //     }
-        // }
 
         auto newSolution = kDefNaiveV2(subgraph, k);
         if (newSolution.kDefective.size() > solution.kDefective.size()) {
