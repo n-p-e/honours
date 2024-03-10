@@ -12,6 +12,8 @@ src = files([
     'src/graph/graph.hpp',
     'src/graph/kplex.cpp',
     'src/graph/kplex.hpp',
+    'src/graph/kdefective.cpp',
+    'src/graph/kdefective.hpp',
     'src/heap.hpp',
 ])
 

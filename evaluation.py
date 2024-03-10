@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 
+import concurrent.futures as futures
 import io
 import json
 import os
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 import pandas as pd
 
 data_dir = Path(__file__).parent / "dataset"
-algo = "v2"
-timeout_sec = 120
+algo = "v3"
+timeout_sec = 300
+max_workers = 8
+exact_prog = Path(__file__).parent.parent / "Maximum-kPlex" / "kPlexS"
 
 
 class Evaluation(TypedDict):
@@ -25,20 +29,13 @@ class Evaluation(TypedDict):
     initial_size: int | None
     solution_size: int | None
     improved_solution: bool
+    exact_size: int | None
+    exact_runtime_ms: float | None
 
 
 def main():
-    if sys.argv[1] == "report":
-        print("Report")
-        report_path = sys.argv[2]
-        df = pd.read_json(
-            report_path, dtype={"initial_size": "int", "solution_size": "int"}
-        )
-        improved = df[df["improved_solution"]]
-        print(
-            f"({len(improved)}/{len(df)}) {len(improved) / len(df)  * 100:.3f}% of improved solution"
-        )
-        print(improved)
+    if len(sys.argv) > 1 and sys.argv[1] == "report":
+        report()
     else:
         evaluation_loop()
 
@@ -54,14 +51,23 @@ def evaluation_loop():
             dataset_files.append(graph)
     exe = compile()
     results: list[Evaluation] = []
+    futs = []
 
+    pool = futures.ThreadPoolExecutor(max_workers=max_workers)
     try:
         for dataset in dataset_files:
-            result = evaluate(exe, dataset, algo=algo, timeout_sec=timeout_sec)
-            results.append(result)
+
+            def task(dataset):
+                result = evaluate(exe, dataset, algo=algo, timeout_sec=timeout_sec)
+                results.append(result)
+
+            future = pool.submit(task, dataset)
+            futs.append(future)
+        futures.wait(futs)
     finally:
         with open("output.json", "w") as outfile:
             json.dump(results, outfile)
+        pool.shutdown(wait=False)
 
 
 def compile():
@@ -73,7 +79,7 @@ def compile():
 
 def evaluate(
     exe: Path, dataset_file: Path, algo="v2", k=2, timeout_sec=30
-) -> Evaluation:
+) -> Optional[Evaluation]:
     dataset_name = str(dataset_file).removesuffix("/edges.txt")
     n, m = dataset_size(dataset_file)
     print(f"[Evaluate] Running on dataset {dataset_name} ({n=}, {m=})")
@@ -98,38 +104,62 @@ def evaluate(
         print("[Error]")
         print(process.stdout)
         print(process.stderr)
-    else:
-        output = str(process.stdout)
-        # print(output)
-        initial_size = None
-        solution_size = None
-        match = re.search(r"Initial solution size = (\d+)", output, re.MULTILINE)
-        if match is not None:
-            initial_size = int(match.group(1))
-        match = re.search(r"Found k-plex of size (\d+)", output, re.MULTILINE)
-        if match is not None:
-            solution_size = int(match.group(1))
+        return None
+    output = str(process.stdout)
+    # print(output)
+    initial_size = None
+    solution_size = None
+    match = re.search(r"Initial solution size = (\d+)", output, re.MULTILINE)
+    if match is not None:
+        initial_size = int(match.group(1))
+    match = re.search(r"Found k-plex of size (\d+)", output, re.MULTILINE)
+    if match is not None:
+        solution_size = int(match.group(1))
 
-        runtime_ms = None
-        match = re.search(r"^\[timer\] ([\d\.]+) microseconds$", output, re.MULTILINE)
-        if match is not None:
-            runtime_ms = float(match.group(1)) / 1000
+    runtime_ms = None
+    match = re.search(r"^\[timer\] ([\d\.]+) microseconds$", output, re.MULTILINE)
+    if match is not None:
+        runtime_ms = float(match.group(1)) / 1000
 
-        improved_solution = False
-        if initial_size != solution_size:
-            print("Found better solution")
-            improved_solution = True
-        print(f"[Evaluate] done, size = {solution_size} runtime = {runtime_ms:.3f}ms")
-        return Evaluation(
-            dataset=dataset_name,
-            algo=algo,
-            n=n,
-            m=m,
-            runtime_ms=runtime_ms,
-            improved_solution=improved_solution,
-            initial_size=initial_size,
-            solution_size=solution_size,
+    improved_solution = False
+    if initial_size != solution_size:
+        print("Found better solution")
+        improved_solution = True
+
+    exact_size = None
+    exact_runtime_ms = None
+    try:
+        exact_process = subprocess.run(
+            map(str, [exact_prog, "-g", dataset_name, "-k", k]),
+            capture_output=True,
+            encoding="utf-8",
+            timeout=timeout_sec,
         )
+    except subprocess.TimeoutExpired:
+        pass
+    exact_output = str(exact_process.stdout)
+    match = re.search(
+        r"Maximum kPlex Size: (\d+), Total Time: ([\d\.,]+)", exact_output, re.MULTILINE
+    )
+    if match:
+        exact_size = int(match.group(1))
+        exact_runtime_ms = float(match.group(2).replace(",", "")) / 1000
+    print(
+        f"[Evaluate] done, size={solution_size} runtime={runtime_ms:.3f}ms exact_size={exact_size}"
+    )
+
+    return Evaluation(
+        dataset=dataset_name,
+        algo=algo,
+        n=n,
+        m=m,
+        runtime_ms=runtime_ms,
+        improved_solution=improved_solution,
+        initial_size=initial_size,
+        solution_size=solution_size,
+        exact_size=exact_size,
+        exact_runtime_ms=exact_runtime_ms,
+    )
 
 
 def dataset_size(file: Path):
@@ -137,6 +167,29 @@ def dataset_size(file: Path):
         line = f.readline()
         n_vert, n_edges = map(int, line.split())
         return n_vert, n_edges
+
+
+def report():
+    print("Report")
+    report_path = sys.argv[2]
+    df = pd.read_json(
+        report_path, dtype={"initial_size": "int", "solution_size": "int"}
+    )
+    improved = df[df["improved_solution"]]
+    print(
+        f"({len(improved)}/{len(df)}) {len(improved) / len(df)  * 100:.2f}% of solutions improved"
+    )
+    timed_out = df[df["solution_size"].isna()]
+    exact_timed_out = df[df["exact_size"].isna()]
+    print(f"{len(timed_out)} timed out | {len(exact_timed_out)} exact timed out")
+    same_as_exact = df[
+        df["solution_size"].eq(df["exact_size"]) & df["solution_size"].notna()
+    ]
+    df["exact_diff"] = df["exact_size"] - df["solution_size"]
+    print(f"{len(same_as_exact)} same as exact")
+    print(df.sort_values(by="exact_diff", ascending=False).head(20))
+    print("\n")
+    print(df.describe())
 
 
 if __name__ == "__main__":
