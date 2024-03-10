@@ -7,7 +7,7 @@ all: builddir main
 .PHONY: main run clean rel .FORCE
 
 builddir:
-	meson setup builddir -Db_sanitize=address
+	meson setup builddir -Db_sanitize=address -Db_lundef=false
 
 main: builddir .FORCE
 	meson compile -C builddir

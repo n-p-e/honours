@@ -1,18 +1,23 @@
 #include "graphv2.hpp"
 
-#include "graph/types.hpp"
-#include "heap.hpp"
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <format>
+
+#include "graph/types.hpp"
+#include "heap.hpp"
 
 using namespace std;
 
 namespace gm::v2 {
+
+namespace fs = std::filesystem;
 
 GraphV2::GraphV2(v_int n, v_int m) : e(new v_int[2 * m]), off(new v_int[n + 1]), n(n), m(m) {
     off[n] = 2 * m;
@@ -29,7 +34,10 @@ GraphV2::~GraphV2() {
 }
 
 GraphV2 GraphV2::readFromFile(std::string path) {
+    if (fs::is_directory(path)) { path = path + "/edges.txt"; }
+    cerr << format("[Graph::readFromFile] reading from {}\n", path);
     std::ifstream ifs{path, std::ifstream::in};
+
     v_int n, m;
     ifs >> n >> m;
 
@@ -112,17 +120,13 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
     result.reserve(g.size());
     degrees.reserve(g.size());
 
-    for (v_id i = 0; i < g.size(); i++) {
-        degrees.push_back(g.degree(i));
-    }
+    for (v_id i = 0; i < g.size(); i++) { degrees.push_back(g.degree(i)); }
 
     GraphLinearHeap heap(g.size(), g.size() + 1, degrees);
     for (v_id i = 0; i < g.size(); i++) {
         auto smallestDeg = heap.popMin();
         v_id u = smallestDeg.first;
-        for (v_id *vp = g.edges(u); vp != g.edgesEnd(u); vp++) {
-            heap.decrement(*vp, 1);
-        }
+        for (v_id *vp = g.edges(u); vp != g.edgesEnd(u); vp++) { heap.decrement(*vp, 1); }
         result.push_back(u);
     }
     return result;

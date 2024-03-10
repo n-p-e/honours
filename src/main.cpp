@@ -1,36 +1,67 @@
-#include "graph/graph.hpp"
-#include "graph/graphv2.hpp"
-#include "graph/kdefective.hpp"
-#include "graph/kplex.hpp"
-#include <boost/program_options.hpp>
+#include <getopt.h>
+#include <unistd.h>
+
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
+#include "graph/graph.hpp"
+#include "graph/graphv2.hpp"
+#include "graph/kdefective.hpp"
+#include "graph/kplex.hpp"
+
 using namespace std;
-namespace po = boost::program_options;
+
+const char *USAGE = //
+    "Usage:\n"
+    "    --help, -h     print help\n"
+    "    -p             select program to run\n"
+    "    -g             path to input graph\n"
+    "    -a             algorithm version\n";
+
+option longopts[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"program", required_argument, NULL, 'p'},
+    {"graph", required_argument, NULL, 'g'},
+    {"algorithm", required_argument, NULL, 'a'},
+    {0, 0, 0, 0}, // end of args
+};
 
 int main(int argc, char **argv) {
-    po::options_description desc("Program options");
-    // clang-format off
-    desc.add_options()
-        ("help", "help message")
-        ("program,p", po::value<string>()->default_value("kplex"), "program [kplex / kdefective]")
-        ("algorithm,a", po::value<string>()->default_value("v2"), "select algorithm [v1 / v2(default) / v3]")
-        ("graph,g", po::value<string>(), "path for graph file")
-        ("k,k", po::value<int>())
-        ;
-    // clang-format on
+    int ch, k = 0;
+    bool help = false;
+    string program = "kplex", graphPath, algo = "v2";
 
-    po::variables_map args;
-    po::store(po::parse_command_line(argc, argv, desc), args);
+    while ((ch = getopt_long(argc, argv, "g:a:p:k:h", longopts, NULL)) != -1) {
+        // cout << std::format("{} {}\n", char(ch), optarg ? optarg : "");
+        switch (ch) {
+        case 'h':
+            help = true;
+            break;
+        case 'p':
+            program = optarg;
+            break;
+        case 'g':
+            graphPath = optarg;
+            break;
+        case 'a':
+            algo = optarg;
+            break;
+        case 'k':
+            k = strtol(optarg, NULL, 10);
+            break;
+        default:
+            help = true;
+        }
+    }
 
-    string program = args["program"].as<string>();
+    if (help || graphPath.empty()) {
+        cout << USAGE;
+        return 0;
+    }
+
     if (program == "kplex") {
-        string graphPath = args["graph"].as<string>();
-        string algo = args["algorithm"].as<string>();
-        int k = args["k"].as<int>();
         gm::Graph graph = gm::readGraph(graphPath);
         cout << "[input graph] " << graph << endl;
         gm::KPlexDegenResult result;
@@ -65,9 +96,6 @@ int main(int argc, char **argv) {
             exit(1);
         }
     } else if (program == "kdef") {
-        string graphPath = args["graph"].as<string>();
-        string algo = args["algorithm"].as<string>();
-        int k = args["k"].as<int>();
         gm::v2::GraphV2 graph = gm::v2::GraphV2::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         auto start = chrono::high_resolution_clock::now();
@@ -79,7 +107,6 @@ int main(int argc, char **argv) {
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
              << " microseconds" << endl;
     }
-
 
     return 0;
 }

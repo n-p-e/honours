@@ -3,6 +3,7 @@ project(
     'cpp',
     default_options: {
         'cpp_std': 'c++20',
+        # 'warning_level': '2',
     }
 )
 
@@ -20,7 +21,8 @@ src = files([
 ])
 
 cxx = meson.get_compiler('cpp')
-deps = [dependency('boost', modules: ['program_options'])]
+# deps = [dependency('boost', modules: ['program_options'])]
+deps = []
 
 executable('main',
     src,
