@@ -46,7 +46,15 @@ int main(int argc, char **argv) {
     auto end = chrono::high_resolution_clock::now();
     cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
          << " microseconds" << endl;
-
+    cout << "[solution] ";
+    for (auto it = result.kPlex.begin(); it < result.kPlex.end(); it++) {
+        if (it == result.kPlex.begin()) {
+            cout << (*it);
+        } else {
+            cout << " " << (*it);
+        }
+    }
+    cout << endl;
 
     return 0;
 }

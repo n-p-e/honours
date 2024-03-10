@@ -98,7 +98,7 @@ def evaluate(
             runtime_ms = float(match.group(1)) / 1000
 
         improved_solution = False
-        if re.search(r"Found better solution", output, re.MULTILINE):
+        if initial_size != solution_size:
             print("Found better solution")
             improved_solution = True
         print(f"[Evaluate] done, size = {solution_size} runtime = {runtime_ms:.3f}ms")

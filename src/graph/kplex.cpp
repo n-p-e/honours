@@ -147,7 +147,15 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         // cout << "calculating subgraph (size=" << subgraph.size() << ")" << endl;
         auto newSolution = kPlexDegen(subgraph, k);
         if (newSolution.kPlex.size() > solution.kPlex.size()) {
-            cout << "Found better solution" << endl;
+            // Map subgraph vertices back
+            vector<v_id> reverseMap(size, -1);
+            for (v_id original: vertices) {
+                reverseMap[vMap[original]] = original;
+            }
+            for (size_t i = 0; i < newSolution.kPlex.size(); i++) {
+                newSolution.kPlex[i] = reverseMap[newSolution.kPlex[i]];
+            }
+            // cout << "Found better solution" << endl;
             solution = std::move(newSolution);
         }
     }
