@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import concurrent.futures as futures
-import io
+import time
 import json
 import os
 import re
@@ -14,6 +14,7 @@ from typing import Optional, TypedDict
 import pandas as pd
 
 data_dir = Path(__file__).parent / "dataset"
+logs_dir = Path(__file__).parent / "evaluation" / "logs"
 algo = "v3"
 k = 5
 prog = "kdef"
@@ -36,6 +37,7 @@ class Evaluation(TypedDict):
 
 
 def main():
+    os.makedirs(logs_dir, exist_ok=True)
     action = sys.argv[1] if len(sys.argv) > 1 else 'evaluation_loop'
     if action == "report":
         report()
@@ -88,13 +90,15 @@ def evaluate(
     dataset_name = str(dataset_file).removesuffix("/edges.txt")
     n, m = dataset_size(dataset_file)
     print(f"[Evaluate] Running on dataset {dataset_name} ({n=}, {m=})")
+    stdout_path = logs_dir / f"out-{dataset_name.rsplit('/', 1)[0]}-{int(time.time())}.txt"
     try:
-        process = subprocess.run(
-            map(str, [exe, "-p", prog, "-a", algo, "-k", k, "-g", dataset_file]),
-            capture_output=True,
-            encoding="utf-8",
-            timeout=timeout_sec,
-        )
+        with open(stdout_path, 'wb') as stdout:
+            process = subprocess.run(
+                map(str, [exe, "-p", prog, "-a", algo, "-k", k, "-g", dataset_file]),
+                stdout=stdout,
+                stderr=subprocess.STDOUT,
+                timeout=timeout_sec,
+            )
     except subprocess.TimeoutExpired:
         print(f"[Evaluate] timeout for dataset {dataset_name}")
         return Evaluation(
@@ -106,11 +110,10 @@ def evaluate(
             improved_solution=False,
         )
     if process.returncode != 0:
-        print("[Error]")
-        print(process.stdout)
-        print(process.stderr)
+        print(f"[Error] see ${str(stdout_path)}")
         return None
-    output = str(process.stdout)
+    with open(stdout_path, 'r', encoding='utf-8') as stdout:
+        output = stdout.read()
     # print(output)
     initial_size = None
     solution_size = None
