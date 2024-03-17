@@ -179,8 +179,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
                 solution = std::move(newSolution);
             }
         }
-        for (auto v : vertices) {
-            included[v] = 0; }
+        for (auto v : vertices) { included[v] = 0; }
     }
     return solution;
 }
@@ -202,7 +201,7 @@ bool checkKDef(Graph &g, const std::vector<v_id> &vs, v_int k) {
 
 bool checkKDefV2(v2::GraphV2 &g, const std::vector<v_id> &vs, v_int k) {
     v_int size = g.size();
-    v_int target = vs.size() * (vs.size() - 1) / 2;
+    int64_t target = int64_t(vs.size()) * (vs.size() - 1) / 2;
     std::vector<uint8_t> included(size, 0);
     v_int count = 0;
     for (v_id u : vs) { included[u] = 1; }
