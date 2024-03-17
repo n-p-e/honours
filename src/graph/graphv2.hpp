@@ -29,6 +29,8 @@ private:
 class GraphV2 {
 public:
     GraphV2(v_int n, v_int m);
+    // for reading from binary file
+    inline GraphV2(v_int n, v_int m, v_int *off, v_int *e) : n(n), m(m), off(off), e(e) {}
     GraphV2(const GraphV2 &) = delete;
     GraphV2 &operator=(const GraphV2 &) = delete;
     GraphV2(GraphV2 &&other);
@@ -57,10 +59,10 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const GraphV2 &g);
     friend Subgraph subgraphDegen(GraphV2 &g, const std::vector<v_int> &vertices);
 
-// private:
-    v_int *e;
-    v_int *off;
+    // private:
     v_int n, m;
+    v_int *off;
+    v_int *e;
     inline v_int eSize() {
         return 2 * m;
     }

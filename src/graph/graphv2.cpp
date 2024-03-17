@@ -1,6 +1,9 @@
 #include "graphv2.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <format>
@@ -20,7 +23,7 @@ namespace gm::v2 {
 
 namespace fs = std::filesystem;
 
-GraphV2::GraphV2(v_int n, v_int m) : e(new v_int[2 * m]), off(new v_int[n + 1]), n(n), m(m) {
+GraphV2::GraphV2(v_int n, v_int m) : n(n), m(m), off(new v_int[n + 1]), e(new v_int[2 * m]) {
     off[n] = 2 * m;
 }
 GraphV2::GraphV2(GraphV2 &&other) {
@@ -34,8 +37,64 @@ GraphV2::~GraphV2() {
     delete[] off;
 }
 
+GraphV2 readGraphBinary(std::string path) {
+    std::cout << "[readGraphBinary] reading using b_degree.bin and b_adj.bin files\n";
+    std::string degreesPath = path + "/b_degree.bin";
+    std::string edgesPath = path + "/b_adj.bin";
+    FILE *fp = fopen(degreesPath.c_str(), "rb");
+    size_t ret = 0;
+    v_int tt;
+    v_int nm[2];
+    (ret = fread(&tt, sizeof(tt), 1, fp));
+    GM_ASSERT(ret == 1, ("readGraphBinary"));
+    GM_ASSERT(tt == sizeof(v_int), ("readGraphBinary"));
+    ret = fread(&nm, sizeof(nm[0]), 2, fp);
+    GM_ASSERT(ret == 2, ("readGraphBinary"));
+
+    v_int n = nm[0], m = nm[1];
+    v_int *degrees = new v_int[n];
+    v_int *edges = new v_int[m];
+
+    std::vector<v_int> adjs(m, 0);
+    ret = fread(degrees, sizeof(degrees[0]), n, fp);
+    GM_ASSERT(ret == n, ("readGraphBinary"));
+    fclose(fp);
+
+    FILE *fpEdges = fopen(edgesPath.c_str(), "rb");
+    ret = fread(edges, sizeof(edges[0]), m, fpEdges);
+    GM_ASSERT(ret == m, ("readGraphBinary"));
+    fclose(fpEdges);
+
+    v_int *start = edges;
+    v_int *dest = edges;
+    v_int real_m = 0; // m after removing duplicates
+    // in-place remove duplicates and self-loops
+    for (v_int i = 0; i < n; i++) {
+        v_int *end = start + degrees[i];
+        v_int *destStart = dest;
+        std::sort(start, end);
+        for (v_int *v = start; v != end; v++) {
+            if ((*v != i) && (v == start || *v != *(v - 1))) {
+                *dest = *v;
+                dest++;
+            }
+        }
+        // turn degrees into offset (prefix sum)
+        degrees[i] = destStart - edges;
+        real_m += dest - destStart;
+        start = end;
+    }
+    degrees[n] = real_m;
+    if (m != real_m) {
+        std::cout << std::format(
+            "{} -> {} edges after removing duplicates and self-loops\n", m / 2, real_m / 2);
+    }
+    GraphV2 g{n, real_m / 2, degrees, edges};
+    return g;
+}
+
 GraphV2 GraphV2::readFromFile(std::string path) {
-    if (fs::is_directory(path)) { path = path + "/edges.txt"; }
+    if (fs::is_directory(path)) { return readGraphBinary(path); }
     cerr << format("[Graph::readFromFile] reading from {}\n", path);
     std::ifstream ifs{path, std::ifstream::in};
 
