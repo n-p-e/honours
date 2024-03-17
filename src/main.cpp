@@ -13,6 +13,7 @@
 #include "graph/kplex.hpp"
 #include "graph/pseudoclique.hpp"
 #include "graph/quasiclique.hpp"
+#include "graph/types.hpp"
 #include "util.hpp"
 
 using namespace std;
@@ -109,12 +110,15 @@ int main(int argc, char **argv) {
     } else if (program == "kdef") {
         gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
-        auto start = chrono::high_resolution_clock::now();
-
         if (algo == "twohop") { cout << "[kDef] using 2-hop neighbours\n"; }
+        if (algo == "naive") { cout << "[kDef] using naive algo\n"; }
+        auto start = chrono::high_resolution_clock::now();
         gm::kDefResult result;
-        // add naive
-        result = gm::kDefDegenV2(graph, k, algo == "twohop");
+        if (algo == "naive") {
+            result = gm::kDefNaiveV2(graph, k);
+        } else {
+            result = gm::kDefDegenV2(graph, k, algo == "twohop");
+        }
         cout << "[kDef] found k-defective-clique of size " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
@@ -131,7 +135,12 @@ int main(int argc, char **argv) {
         gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         cout << format("[quasiClique] alpha={}\n", alpha);
-        auto result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha); });
+        gm::SubgraphResult result;
+        if (algo == "naive") {
+            result = gm::printTimer([&]() { return gm::quasiCliqueNaive(graph, alpha); });
+        } else {
+            result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha); });
+        }
         cout << format("[quasiClique] result size {}\n", result.size);
         if (!gm::validateQuasiClique(graph, result.subgraph, alpha)) {
             cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;
@@ -145,7 +154,12 @@ int main(int argc, char **argv) {
         gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         cout << format("[pseudoClique] alpha={}\n", alpha);
-        auto result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha); });
+        gm::SubgraphResult result;
+        if (algo == "naive") {
+            result = gm::printTimer([&]() { return gm::pseudoCliqueNaive(graph, alpha); });
+        } else {
+            result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha); });
+        }
         cout << format("[pseudoClique] result size {}\n", result.size);
         if (!gm::validatePseudoClique(graph, result.subgraph, alpha)) {
             cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;

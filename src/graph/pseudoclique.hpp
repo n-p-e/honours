@@ -8,6 +8,7 @@
 
 namespace gm {
 
+SubgraphResult pseudoCliqueNaive(v2::Graph &graph, double alpha);
 SubgraphResult pseudoClique(v2::Graph &graph, double alpha);
 
 bool validatePseudoClique(v2::Graph &graph, const std::vector<v_id> &pseudoClique, double alpha);
