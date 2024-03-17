@@ -73,8 +73,7 @@ GraphV2
 GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOut /* = nullptr */) {
     // Map from old vertex id -> new vertex id
     vector<v_int> vMap(this->size(), -1); // optimize
-    auto verticesSorted = vertices;
-    std::sort(verticesSorted.begin(), verticesSorted.end());
+    // std::sort(vertices.begin(), vertices.end());
     v_int nextId = 0;
     for (v_int v : vertices) {
         vMap[v] = nextId;
@@ -82,12 +81,13 @@ GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOu
     }
     static std::vector<pair<v_int, v_int>> edges;
     edges.clear();
-    for (v_int u : verticesSorted) {
+    for (v_int u : vertices) {
         for (v_int v : this->iterNeighbours(u)) {
             if (vMap[v] >= 0) {
-                edges.push_back(make_pair(vMap[u], vMap[v])); // reverse will also be pushed
-                // break if degen
-                // edges.push_back(make_pair(vMap[v], vMap[u]));
+                // reverse will also be pushed
+                // we guarantee all edges starting with u is consecutive
+                edges.push_back(make_pair(vMap[u], vMap[v]));
+                // TODO: break if degen
             }
         }
     }

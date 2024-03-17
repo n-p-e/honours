@@ -38,39 +38,38 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha) {
         });
     }
 
-    // Generate a subgraph
+    vector<int> included(size, 0);
     for (v_id i = 0; i < size; i++) {
         if (graph.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;
-        vector<int> included(size, 0);
+        vertices.push_back(i);
         included[i] = 1;
         auto neighbours = graph.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
             if (degenRank[j] < degenRank[i]) { break; }
+            vertices.push_back(j);
             included[j] = 1;
         }
-        for (v_id j = 0; j < size; j++) {
-            if (included[j]) { vertices.push_back(j); }
-        }
-        if (vertices.size() < solution.size) { continue; }
+        if (vertices.size() > solution.size) {
+            vector<v_id> vMap;
 
-        // Create subgraph
-        vector<v_id> vMap;
+            auto subgraph = graph.subgraph(vertices, &vMap);
 
-        auto subgraph = graph.subgraph(vertices, &vMap);
-
-        auto newSolution = quasiCliqueNaive(subgraph, alpha);
-        if (newSolution.size > solution.size) {
-            // Map subgraph vertices back
-            vector<v_id> reverseMap(size, -1);
-            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
-            for (size_t i = 0; i < newSolution.size; i++) {
-                newSolution.subgraph[i] = reverseMap[newSolution.subgraph[i]];
+            auto newSolution = quasiCliqueNaive(subgraph, alpha);
+            if (newSolution.size > solution.size) {
+                // Map subgraph vertices back
+                vector<v_id> reverseMap(size, -1);
+                for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
+                for (size_t i = 0; i < newSolution.size; i++) {
+                    newSolution.subgraph[i] = reverseMap[newSolution.subgraph[i]];
+                }
+                // cout << "Found better solution" << endl;
+                solution = std::move(newSolution);
             }
-            // cout << "Found better solution" << endl;
-            solution = std::move(newSolution);
         }
+
+        for (auto v : vertices) { included[v] = 0; }
     }
     return solution;
 }

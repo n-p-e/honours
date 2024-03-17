@@ -127,7 +127,6 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
 
-
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
     for (v_id i = 0; i < size; i++) {
@@ -137,44 +136,51 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
         });
     }
 
+    vector<uint8_t> included(size, 0);
     // Generate a subgraph
     for (v_id i = 0; i < size; i++) {
         if (g.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;
-        vector<uint8_t> included(size, 0);
+        vertices.push_back(i);
         included[i] = 1;
         auto neighbours = g.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
             if (degenRank[j] < degenRank[i]) { break; }
-            included[j] = 1;
+            if (!included[j]) {
+                included[j] = 1;
+                vertices.push_back(j);
+            }
             if (twoHop) {
                 for (v_int k : g.iterNeighbours(j)) {
                     if (degenRank[k] < degenRank[i]) { break; }
-                    included[k] = 1;
+                    if (!included[k]) {
+                        cout << k << endl;
+                        included[k] = 1;
+                        vertices.push_back(k);
+                    }
                 }
             }
         }
-        for (v_id j = 0; j < size; j++) {
-            if (included[j]) { vertices.push_back(j); }
-        }
-        if (vertices.size() < solution.size) { continue; }
+        if (vertices.size() >= solution.size) {
+            // Create subgraph
+            vector<v_id> vMap;
+            auto subgraph = g.subgraph(vertices, &vMap);
 
-        // Create subgraph
-        vector<v_id> vMap;
-        auto subgraph = g.subgraph(vertices, &vMap);
-
-        auto newSolution = kDefNaiveV2(subgraph, k);
-        if (newSolution.kDefective.size() > solution.kDefective.size()) {
-            // Map subgraph vertices back
-            vector<v_id> reverseMap(size, -1);
-            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
-            for (size_t i = 0; i < newSolution.kDefective.size(); i++) {
-                newSolution.kDefective[i] = reverseMap[newSolution.kDefective[i]];
+            auto newSolution = kDefNaiveV2(subgraph, k);
+            if (newSolution.kDefective.size() > solution.kDefective.size()) {
+                // Map subgraph vertices back
+                vector<v_id> reverseMap(size, -1);
+                for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
+                for (size_t i = 0; i < newSolution.kDefective.size(); i++) {
+                    newSolution.kDefective[i] = reverseMap[newSolution.kDefective[i]];
+                }
+                // cout << "Found better solution" << endl;
+                solution = std::move(newSolution);
             }
-            // cout << "Found better solution" << endl;
-            solution = std::move(newSolution);
         }
+        for (auto v : vertices) {
+            included[v] = 0; }
     }
     return solution;
 }
