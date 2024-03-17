@@ -51,7 +51,7 @@ void Graph::addEdge(v_id v1, v_id v2) {
 
 Graph Graph::subgraph(const std::vector<v_id> &vertices) const {
     // Map from old vertex id -> new vertex id
-    vector<v_id> vMap(this->size(), -1);
+    vector<v_id> vMap(this->size(), -1); // slow, n^2
     v_id nextId = 0;
     for (v_id v : vertices) {
         vMap[v] = nextId;
@@ -76,10 +76,10 @@ std::vector<v_id> degenOrdering(const Graph &g) {
 
     for (v_id i = 0; i < g.size(); i++) {
         degrees.push_back(g.degreeOf(i));
-        cout << g.degreeOf(i) << ",";
+        // cout << g.degreeOf(i) << ",";
     }
-    cout << "\n"
-         << "n=" << g.size() << endl;
+    // cout << "\n"
+    //      << "n=" << g.size() << endl;
     GraphLinearHeap heap(g.size(), g.size() + 1, degrees);
     for (v_id i = 0; i < g.size(); i++) {
         auto smallestDeg = heap.popMin();

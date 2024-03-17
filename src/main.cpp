@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
              << " microseconds" << endl;
         cout << "[solution] ";
+        // comment when experimenting
         for (auto it = result.kPlex.begin(); it < result.kPlex.end(); it++) {
             if (it == result.kPlex.begin()) {
                 cout << (*it);
@@ -112,6 +113,7 @@ int main(int argc, char **argv) {
 
         if (algo == "twohop") { cout << "[kDef] using 2-hop neighbours\n"; }
         gm::kDefResult result;
+        // add naive
         result = gm::kDefDegenV2(graph, k, algo == "twohop");
         cout << "[kDef] found k-defective-clique of size " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
