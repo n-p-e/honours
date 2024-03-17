@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
+import traceback
 from pathlib import Path
 from typing import Optional, TypedDict
 
@@ -63,9 +64,12 @@ def evaluation_loop():
         for dataset in dataset_files:
 
             def task(dataset):
-                result = evaluate(
-                    exe, dataset, prog=prog, algo=algo, k=k, timeout_sec=timeout_sec,
-                )
+                try:
+                    result = evaluate(
+                        exe, dataset, prog=prog, algo=algo, k=k, timeout_sec=timeout_sec,
+                    )
+                except Exception:
+                    traceback.print_exc()
                 results.append(result)
 
             future = pool.submit(task, dataset)
@@ -90,9 +94,9 @@ def evaluate(
     dataset_name = str(dataset_file).removesuffix("/edges.txt")
     n, m = dataset_size(dataset_file)
     print(f"[Evaluate] Running on dataset {dataset_name} ({n=}, {m=})")
-    stdout_path = logs_dir / f"out-{dataset_name.rsplit('/', 1)[0]}-{int(time.time())}.txt"
+    stdout_path = logs_dir / f"out-{dataset_name.rsplit('/', 1)[-1]}-{int(time.time())}.txt"
     try:
-        with open(stdout_path, 'wb') as stdout:
+        with open(stdout_path, 'ab+') as stdout:
             process = subprocess.run(
                 map(str, [exe, "-p", prog, "-a", algo, "-k", k, "-g", dataset_file]),
                 stdout=stdout,
@@ -114,7 +118,6 @@ def evaluate(
         return None
     with open(stdout_path, 'r', encoding='utf-8') as stdout:
         output = stdout.read()
-    # print(output)
     initial_size = None
     solution_size = None
     match = re.search(r"Initial solution size = (\d+)", output, re.MULTILINE)
