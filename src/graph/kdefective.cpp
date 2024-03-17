@@ -155,7 +155,6 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
                 for (v_int k : g.iterNeighbours(j)) {
                     if (degenRank[k] < degenRank[i]) { break; }
                     if (!included[k]) {
-                        cout << k << endl;
                         included[k] = 1;
                         vertices.push_back(k);
                     }

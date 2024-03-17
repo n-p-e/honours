@@ -24,7 +24,7 @@ SubgraphResult pseudoCliqueNaive(v2::Graph &graph, double alpha) {
     return {solution, v_int(solution.size())};
 }
 
-SubgraphResult pseudoClique(v2::Graph &graph, double alpha) {
+SubgraphResult pseudoClique(v2::Graph &graph, double alpha, bool twoHop) {
     SubgraphResult solution = {};
 
     v_int size = graph.size();
@@ -54,6 +54,15 @@ SubgraphResult pseudoClique(v2::Graph &graph, double alpha) {
                 if (degenRank[j] < degenRank[i]) { break; }
                 vertices.push_back(j);
                 included[j] = 1;
+            }
+            if (twoHop) {
+                for (v_int k : graph.iterNeighbours(j)) {
+                    if (degenRank[k] < degenRank[i]) { break; }
+                    if (!included[k]) {
+                        included[k] = 1;
+                        vertices.push_back(k);
+                    }
+                }
             }
         }
         if (vertices.size() > solution.size) {

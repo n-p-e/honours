@@ -95,13 +95,13 @@ int main(int argc, char **argv) {
              << " microseconds" << endl;
         cout << "[solution] ";
         // comment when experimenting
-        for (auto it = result.kPlex.begin(); it < result.kPlex.end(); it++) {
-            if (it == result.kPlex.begin()) {
-                cout << (*it);
-            } else {
-                cout << " " << (*it);
-            }
-        }
+        // for (auto it = result.kPlex.begin(); it < result.kPlex.end(); it++) {
+        //     if (it == result.kPlex.begin()) {
+        //         cout << (*it);
+        //     } else {
+        //         cout << " " << (*it);
+        //     }
+        // }
         cout << endl;
         if (!gm::validateKPlex(graph, result.kPlex, k)) {
             cout << "ERROR: !!!!!!Invalid kplex!!!!!!" << endl;
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
         if (algo == "naive") {
             result = gm::printTimer([&]() { return gm::quasiCliqueNaive(graph, alpha); });
         } else {
-            result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha); });
+            result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha, algo == "twohop"); });
         }
         cout << format("[quasiClique] result size {}\n", result.size);
         if (!gm::validateQuasiClique(graph, result.subgraph, alpha)) {
@@ -158,11 +158,11 @@ int main(int argc, char **argv) {
         if (algo == "naive") {
             result = gm::printTimer([&]() { return gm::pseudoCliqueNaive(graph, alpha); });
         } else {
-            result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha); });
+            result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha, algo == "twohop"); });
         }
         cout << format("[pseudoClique] result size {}\n", result.size);
         if (!gm::validatePseudoClique(graph, result.subgraph, alpha)) {
-            cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;
+            cout << "ERROR: !!!!!!Invalid pseudoclique!!!!!!" << endl;
             exit(1);
         }
     }
