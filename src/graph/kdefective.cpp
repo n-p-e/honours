@@ -138,6 +138,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
 
     vector<uint8_t> included(size, 0);
     // Generate a subgraph
+    // parallelise w/ openmp
     for (v_id i = 0; i < size; i++) {
         if (g.degree(i) <= solution.size) { continue; }
         vector<v_id> vertices;

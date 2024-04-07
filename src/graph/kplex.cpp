@@ -74,8 +74,9 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
     std::vector<int> removed(size, 0);
     int n_removed = 0;
+    // add to k-def
     for (v_id i = 0; i < size; i++) {
-        if (g.degreeOf(i) < initialSize - k) {
+        if (g.degreeOf(i) <= initialSize - k) {
             removed[i] = 1;
             n_removed++;
         }
@@ -102,6 +103,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     for (v_id i = 0; i < size; i++) {
         if (removed[i]) { continue; }
         vector<v_id> vertices;
+        vertices.push_back(i);
         included[i] = 1;
         auto &neighbours = g.neighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
@@ -121,7 +123,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
                 }
             }
         }
-        if (vertices.size() < solution.kPlex.size()) {
+        if (vertices.size() <= solution.kPlex.size()) {
             for (auto v : vertices) {
                 vMap[v] = -1;
                 included[v] = 0;
@@ -132,7 +134,6 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         // Create subgraph
         // Graph subgraph = g.subgraph(vertices);
         Graph subgraph(vertices.size());
-        vector<v_id> vMap(size, -1); // optimize, reset
         v_id nextId = 0;
         for (v_id v : vertices) {
             vMap[v] = nextId;
@@ -156,7 +157,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         auto newSolution = kPlexDegen(subgraph, k);
         if (newSolution.kPlex.size() > solution.kPlex.size()) {
             // Map subgraph vertices back
-            vector<v_id> reverseMap(size, -1);
+            vector<v_id> reverseMap(size, -1); // same as vertices, delete
             for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
             for (size_t i = 0; i < newSolution.kPlex.size(); i++) {
                 newSolution.kPlex[i] = reverseMap[newSolution.kPlex[i]];
