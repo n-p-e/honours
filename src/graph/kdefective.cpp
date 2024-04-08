@@ -159,7 +159,8 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
                 }
             }
         }
-        if (vertices.size() >= solution.size) {
+
+        if (vertices.size() > solution.size) {
             // Create subgraph
             vector<v_id> vMap;
             auto subgraph = g.subgraph(vertices, &vMap);
