@@ -131,7 +131,7 @@ GraphV2 GraphV2::readFromFile(std::string path) {
 GraphV2
 GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOut /* = nullptr */) {
     // Map from old vertex id -> new vertex id
-    vector<v_int> vMap(this->size(), -1); // optimize
+    static vector<v_int> vMap(this->size(), -1); // optimize
     // std::sort(vertices.begin(), vertices.end());
     v_int nextId = 0;
     for (v_int v : vertices) {
@@ -169,7 +169,10 @@ GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOu
     }
     g.off[g.size()] = g.eSize();
 
-    if (vMapOut) { *vMapOut = std::move(vMap); }
+    // if (vMapOut) { *vMapOut = std::move(vMap); }
+    for (v_int u : vertices) {
+        vMap[u] = -1;
+    }
 
     return g;
 }
@@ -199,7 +202,7 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
 GraphV2 subgraphDegen(
     GraphV2 &g, std::vector<v_int> &vertices, std::vector<v_int> *vMapOut, v_int *degenRank) {
     // Map from old vertex id -> new vertex id
-    vector<v_int> vMap(g.size(), -1); // optimize
+    static vector<v_int> vMap(g.size(), -1); // optimize
     // std::sort(vertices.begin(), vertices.end());
     v_int nextId = 0;
     for (v_int v : vertices) {
@@ -238,7 +241,11 @@ GraphV2 subgraphDegen(
     }
     sub.off[sub.size()] = sub.eSize();
 
-    if (vMapOut) { *vMapOut = std::move(vMap); }
+    // if (vMapOut) { *vMapOut = std::move(vMap); }
+
+    for (auto u : vertices) {
+        vMap[u] = -1;
+    }
 
     return sub;
 }
