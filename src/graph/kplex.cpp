@@ -132,7 +132,8 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
         }
 
         // Create subgraph
-        v2::Graph subgraph = g.subgraph(vertices);
+        // v2::Graph subgraph = g.subgraph(vertices);
+        v2::Graph subgraph = v2::subgraphDegen(g, vertices, degenRank.data());
         // auto subgraph = v2::subgraphDegen(g, vertices, &vMap, degenRank.data());
         v_id nextId = 0;
         for (v_id v : vertices) {

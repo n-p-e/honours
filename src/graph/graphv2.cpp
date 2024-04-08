@@ -170,9 +170,7 @@ GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOu
     g.off[g.size()] = g.eSize();
 
     // if (vMapOut) { *vMapOut = std::move(vMap); }
-    for (v_int u : vertices) {
-        vMap[u] = -1;
-    }
+    for (v_int u : vertices) { vMap[u] = -1; }
 
     return g;
 }
@@ -199,10 +197,10 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
     return result;
 }
 
-GraphV2 subgraphDegen(
-    GraphV2 &g, std::vector<v_int> &vertices, std::vector<v_int> *vMapOut, v_int *degenRank) {
+GraphV2 subgraphDegen(GraphV2 &g, std::vector<v_int> &vertices, v_int *degenRank) {
     // Map from old vertex id -> new vertex id
-    static vector<v_int> vMap(g.size(), -1); // optimize
+    static vector<v_int> vMap(g.size(), -1);
+    v_int size = vertices.size();
     // std::sort(vertices.begin(), vertices.end());
     v_int nextId = 0;
     for (v_int v : vertices) {
@@ -211,6 +209,9 @@ GraphV2 subgraphDegen(
     }
     static std::vector<pair<v_int, v_int>> edges;
     edges.clear();
+    v_int *degrees = new v_int[size]{0};
+    v_int *offsets = new v_int[size + 1]{0};
+
     for (v_int u : vertices) {
         for (v_int v : g.iterNeighbours(u)) {
             if (vMap[v] >= 0) {
@@ -219,34 +220,25 @@ GraphV2 subgraphDegen(
                 // reverse will also be pushed
                 edges.push_back(make_pair(vMap[u], vMap[v]));
                 edges.push_back(make_pair(vMap[v], vMap[u]));
+                degrees[vMap[u]]++;
+                degrees[vMap[v]]++;
             }
         }
     }
+    v_int *adj = new v_int[edges.size()];
 
-    // TODO: optimize sort with 2 scans
-    std::sort(edges.begin(), edges.end());
-
-    GraphV2 sub{v_int(vertices.size()), v_int(edges.size() / 2)};
-    memset(sub.off, -1, sizeof(v_int) * sub.size());
-
-    v_int i = 0;
-    for (const auto &edge : edges) {
-        v_int u = edge.first;
-        v_int v = edge.second;
-        if (sub.off[u] == -1) { sub.off[u] = i; }
-        sub.e[i] = v;
-        i++;
+    for (v_int i = 0; i < size; i++) { offsets[i + 1] = offsets[i] + degrees[i]; }
+    for (const auto &e : edges) {
+        v_int u = e.first, v = e.second;
+        adj[offsets[u]] = v;
+        offsets[u] = offsets[u] + 1;
     }
-    for (auto i = 0; i < sub.size(); i++) {
-        if (sub.off[i] == -1) { sub.off[i] = (i == 0 ? 0 : sub.off[i - 1]); }
-    }
-    sub.off[sub.size()] = sub.eSize();
+    offsets[0] = 0;
+    for (v_int i = 0; i < size; i++) { offsets[i + 1] = offsets[i] + degrees[i]; }
 
+    GraphV2 sub{size, (v_int) edges.size(), offsets, adj};
     // if (vMapOut) { *vMapOut = std::move(vMap); }
-
-    for (auto u : vertices) {
-        vMap[u] = -1;
-    }
+    for (auto u : vertices) { vMap[u] = -1; }
 
     return sub;
 }
