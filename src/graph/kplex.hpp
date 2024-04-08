@@ -1,7 +1,7 @@
 #ifndef GM_KPLEX_HPP
 #define GM_KPLEX_HPP
 
-#include "graph/graph.hpp"
+#include "graph/graphv2.hpp"
 #include <vector>
 
 namespace gm {
@@ -11,11 +11,11 @@ struct KPlexDegenResult {
     int64_t ub;
 };
 
-KPlexDegenResult kPlexDegen(const Graph &g, int64_t k);
+KPlexDegenResult kPlexDegen(v2::Graph &g, int64_t k);
 
-KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop);
+KPlexDegenResult kPlexV2(v2::Graph &g, int64_t k, bool twoHop);
 
-bool validateKPlex(const Graph &g, std::vector<v_id> kplex, int k);
+bool validateKPlex(v2::Graph &g, std::vector<v_id> kplex, int k);
 
 
 } // namespace gm

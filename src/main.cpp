@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     }
 
     if (program == "kplex") {
-        gm::Graph graph = gm::readGraph(graphPath);
+        gm::v2::Graph graph = gm::v2::Graph::readFromFile(graphPath);
         cout << "[input graph] " << graph << endl;
         gm::KPlexDegenResult result;
         auto start = chrono::high_resolution_clock::now();

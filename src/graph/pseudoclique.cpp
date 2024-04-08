@@ -73,11 +73,8 @@ SubgraphResult pseudoClique(v2::Graph &graph, double alpha, bool twoHop) {
 
             auto newSolution = pseudoCliqueNaive(subgraph, alpha);
             if (newSolution.size > solution.size) {
-                // Map subgraph vertices back
-                vector<v_id> reverseMap(size, -1);
-                for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
                 for (size_t i = 0; i < newSolution.size; i++) {
-                    newSolution.subgraph[i] = reverseMap[newSolution.subgraph[i]];
+                    newSolution.subgraph[i] = vertices[newSolution.subgraph[i]];
                 }
                 solution = std::move(newSolution);
             }

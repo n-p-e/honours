@@ -108,11 +108,8 @@ kDefResult kDefDegen(Graph &g, v_int k) {
         // cout << "calculating subgraph (size=" << subgraph.size() << ")" << endl;
         auto newSolution = kDefNaive(subgraph, k);
         if (newSolution.kDefective.size() > solution.kDefective.size()) {
-            // Map subgraph vertices back
-            vector<v_id> reverseMap(size, -1);
-            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
             for (size_t i = 0; i < newSolution.kDefective.size(); i++) {
-                newSolution.kDefective[i] = reverseMap[newSolution.kDefective[i]];
+                newSolution.kDefective[i] = vertices[newSolution.kDefective[i]];
             }
             // cout << "Found better solution" << endl;
             solution = std::move(newSolution);

@@ -52,7 +52,7 @@ GraphV2 readGraphBinary(std::string path) {
     GM_ASSERT(ret == 2, ("readGraphBinary"));
 
     v_int n = nm[0], m = nm[1];
-    v_int *degrees = new v_int[n];
+    v_int *degrees = new v_int[n + 1];
     v_int *edges = new v_int[m];
 
     std::vector<v_int> adjs(m, 0);
@@ -196,15 +196,51 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
     return result;
 }
 
-// maybe not useful
-Subgraph subgraphDegen(GraphV2 &g, int n, v_int *vertices, v_int *vertMap, v_int *degrees) {
-    // int m = reduce(degrees, degrees + n, 0, std::plus()) / 2;
-    Subgraph s{n};
-    s.e = g.e;
-    s.off = g.off;
-    s.vertMap = vertMap;
-    s.deg = degrees;
-    return s;
+GraphV2 subgraphDegen(
+    GraphV2 &g, std::vector<v_int> &vertices, std::vector<v_int> *vMapOut, v_int *degenRank) {
+    // Map from old vertex id -> new vertex id
+    vector<v_int> vMap(g.size(), -1); // optimize
+    // std::sort(vertices.begin(), vertices.end());
+    v_int nextId = 0;
+    for (v_int v : vertices) {
+        vMap[v] = nextId;
+        nextId++;
+    }
+    static std::vector<pair<v_int, v_int>> edges;
+    edges.clear();
+    for (v_int u : vertices) {
+        for (v_int v : g.iterNeighbours(u)) {
+            if (vMap[v] >= 0) {
+                if (degenRank[v] < degenRank[u]) { break; }
+
+                // reverse will also be pushed
+                edges.push_back(make_pair(vMap[u], vMap[v]));
+                edges.push_back(make_pair(vMap[v], vMap[u]));
+            }
+        }
+    }
+
+    std::sort(edges.begin(), edges.end());
+
+    GraphV2 sub{v_int(vertices.size()), v_int(edges.size() / 2)};
+    memset(sub.off, -1, sizeof(v_int) * sub.size());
+
+    v_int i = 0;
+    for (const auto &edge : edges) {
+        v_int u = edge.first;
+        v_int v = edge.second;
+        if (sub.off[u] == -1) { sub.off[u] = i; }
+        sub.e[i] = v;
+        i++;
+    }
+    for (auto i = 0; i < sub.size(); i++) {
+        if (sub.off[i] == -1) { sub.off[i] = (i == 0 ? 0 : sub.off[i - 1]); }
+    }
+    sub.off[sub.size()] = sub.eSize();
+
+    if (vMapOut) { *vMapOut = std::move(vMap); }
+
+    return sub;
 }
 
 

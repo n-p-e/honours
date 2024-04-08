@@ -1,6 +1,7 @@
 #include "graph/kplex.hpp"
 
 #include "graph/graph.hpp"
+#include "graph/graphv2.hpp"
 #include "graph/types.hpp"
 #include "heap.hpp"
 #include "util.hpp"
@@ -14,14 +15,14 @@ namespace gm {
 using namespace std;
 
 // Algorithm 2: kPlex-Degen
-KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
+KPlexDegenResult kPlexDegen(v2::Graph &g, int64_t k) {
     KPlexDegenResult result = {.kPlex = {}, .ub = 0};
     int64_t size = g.size();
 
     std::vector<v_id> degrees;
     std::vector<int> removed(size, 0);
     degrees.reserve(size);
-    for (v_id i = 0; i < size; i++) { degrees.push_back(g.degreeOf(i)); }
+    for (v_id i = 0; i < size; i++) { degrees.push_back(g.degree(i)); }
     GraphLinearHeap heap(g.size(), g.size(), degrees);
 
     for (v_id i = 0; i < size; i++) {
@@ -46,7 +47,7 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
 
         // Line 9
         // Remove current node to start next iteration
-        auto &neighbours = g.neighbours(v);
+        auto neighbours = g.iterNeighbours(v);
         for (v_id w : neighbours) {
             if (!removed[w]) {
                 degrees[w] -= 1;
@@ -59,7 +60,7 @@ KPlexDegenResult kPlexDegen(const Graph &g, int64_t k) {
     return result;
 }
 
-KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
+KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
     v_int size = g.size();
     auto initialSolution = kPlexDegen(g, k);
     v_int initialSize = initialSolution.kPlex.size();
@@ -76,7 +77,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     int n_removed = 0;
     // add to k-def
     for (v_id i = 0; i < size; i++) {
-        if (g.degreeOf(i) <= initialSize - k) {
+        if (g.degree(i) <= initialSize - k) {
             removed[i] = 1;
             n_removed++;
         }
@@ -89,11 +90,10 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
     for (v_id i = 0; i < size; i++) {
-        auto neighbours = g.neighbours(i);
+        auto neighbours = g.iterNeighbours(i);
         std::sort(neighbours.begin(), neighbours.end(), [&](v_id v1, v_id v2) {
             return degenRank[v1] > degenRank[v2];
         });
-        g.setNeighbours(i, neighbours);
     }
 
     vector<v_id> vMap(size, -1);
@@ -105,7 +105,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         vector<v_id> vertices;
         vertices.push_back(i);
         included[i] = 1;
-        auto &neighbours = g.neighbours(i);
+        auto neighbours = g.iterNeighbours(i);
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id j : neighbours) {
             if (degenRank[j] < degenRank[i]) { break; }
@@ -113,7 +113,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
                 included[j] = 1;
                 vertices.push_back(j);
                 if (twoHop) {
-                    for (v_id k : g.neighbours(j)) {
+                    for (v_id k : g.iterNeighbours(j)) {
                         if (degenRank[k] < degenRank[i]) { break; }
                         if (!removed[k]) {
                             included[k] = 1;
@@ -132,35 +132,20 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
         }
 
         // Create subgraph
-        // Graph subgraph = g.subgraph(vertices);
-        Graph subgraph(vertices.size());
+        v2::Graph subgraph = g.subgraph(vertices);
+        // auto subgraph = v2::subgraphDegen(g, vertices, &vMap, degenRank.data());
         v_id nextId = 0;
         for (v_id v : vertices) {
             vMap[v] = nextId;
             nextId++;
-        }
-        for (v_id u : vertices) {
-            for (v_id v : g.neighbours(u)) {
-                // Optimize with degenRank as the neighbours arrays are ordered
-                if (degenRank[u] < degenRank[v]) {
-                    if (vMap[v] >= 0) {
-                        // cerr << "addEdge " << vMap[u] << " " << vMap[v] << endl;
-                        subgraph.addEdge(vMap[u], vMap[v]);
-                    }
-                } else {
-                    break;
-                }
-            }
         }
 
         // cout << "calculating subgraph (size=" << subgraph.size() << ")" << endl;
         auto newSolution = kPlexDegen(subgraph, k);
         if (newSolution.kPlex.size() > solution.kPlex.size()) {
             // Map subgraph vertices back
-            vector<v_id> reverseMap(size, -1); // same as vertices, delete
-            for (v_id original : vertices) { reverseMap[vMap[original]] = original; }
             for (size_t i = 0; i < newSolution.kPlex.size(); i++) {
-                newSolution.kPlex[i] = reverseMap[newSolution.kPlex[i]];
+                newSolution.kPlex[i] = vertices[newSolution.kPlex[i]];
             }
             // cout << "Found better solution" << endl;
             solution = std::move(newSolution);
@@ -176,7 +161,7 @@ KPlexDegenResult kPlexV2(Graph &g, int64_t k, bool twoHop) {
     return solution;
 }
 
-bool validateKPlex(const Graph &g, std::vector<v_id> kplex, int k) {
+bool validateKPlex(v2::Graph &g, std::vector<v_id> kplex, int k) {
     v_int size = g.size();
     std::vector<int> isInKplex(size, 0);
     for (v_id u : kplex) { isInKplex[u] = 1; }
@@ -184,7 +169,7 @@ bool validateKPlex(const Graph &g, std::vector<v_id> kplex, int k) {
     for (size_t i = 0; i < kplex.size(); i++) {
         v_id u = kplex[i];
         int numConnections = 0;
-        for (v_id v : g.neighbours(u)) {
+        for (v_id v : g.iterNeighbours(u)) {
             if (isInKplex[v]) { numConnections++; }
         }
         if (numConnections < kplex.size() - k) { return false; }

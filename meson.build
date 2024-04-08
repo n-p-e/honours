@@ -27,7 +27,9 @@ src = files([
 
 cxx = meson.get_compiler('cpp')
 # deps = [dependency('boost', modules: ['program_options'])]
-deps = []
+deps = [
+    dependency('openmp'),
+]
 
 executable('main',
     src,

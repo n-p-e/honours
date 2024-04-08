@@ -107,6 +107,8 @@ public:
     v_int *deg; // degree of each vertex
 };
 
+GraphV2 subgraphDegen(GraphV2 &g, std::vector<v_int> &vertices, std::vector<v_int> *vMapOut, v_int *degenRank);
+
 } // namespace gm::v2
 
 #endif
