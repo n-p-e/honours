@@ -223,6 +223,7 @@ GraphV2 subgraphDegen(
         }
     }
 
+    // TODO: optimize sort with 2 scans
     std::sort(edges.begin(), edges.end());
 
     GraphV2 sub{v_int(vertices.size()), v_int(edges.size() / 2)};
