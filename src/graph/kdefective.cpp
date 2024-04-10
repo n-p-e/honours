@@ -40,7 +40,7 @@ kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
             break;
         }
     }
-    result.kDefective = solution;
+    result.kDefective = std::move(solution);
     result.size = solution.size();
     return result;
 }
@@ -169,7 +169,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
                 for (size_t i = 0; i < newSolution.kDefective.size(); i++) {
                     newSolution.kDefective[i] = vertices[newSolution.kDefective[i]];
                 }
-                // cout << "Found better solution" << endl;
+                cout << "Found better solution of size " << newSolution.size << endl;
                 solution = std::move(newSolution);
             }
         }

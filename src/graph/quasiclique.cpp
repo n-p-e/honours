@@ -17,10 +17,10 @@ SubgraphResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
         solution.push_back(ordering[i]);
         if (!validateQuasiClique(graph, solution, alpha)) {
             solution.pop_back();
-            return {solution, v_int(solution.size())};
+            return {std::move(solution)};
         }
     }
-    return {solution, v_int(solution.size())};
+    return {std::move(solution)};
 }
 
 SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {

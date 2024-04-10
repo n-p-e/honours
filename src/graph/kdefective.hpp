@@ -10,7 +10,7 @@ namespace gm {
 
 struct kDefResult {
     std::vector<v_id> kDefective;
-    v_int size = 0;
+    v_int size = kDefective.size();
 };
 
 kDefResult kDefNaive(Graph &g, v_int k);
