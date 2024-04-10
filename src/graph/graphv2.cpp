@@ -146,7 +146,6 @@ GraphV2::subgraph(const std::vector<v_int> &vertices, std::vector<v_int> *vMapOu
                 // reverse will also be pushed
                 // we guarantee all edges starting with u is consecutive
                 edges.push_back(make_pair(vMap[u], vMap[v]));
-                // TODO: break if degen
             }
         }
     }
@@ -197,6 +196,7 @@ std::vector<v_id> degenOrdering(GraphV2 &g) {
     return result;
 }
 
+// Generate subgraph, using degenRank optimisation
 GraphV2 subgraphDegen(GraphV2 &g, std::vector<v_int> &vertices, v_int *degenRank) {
     // Map from old vertex id -> new vertex id
     static vector<v_int> vMap(g.size(), -1);

@@ -69,7 +69,7 @@ SubgraphResult pseudoClique(v2::Graph &graph, double alpha, bool twoHop) {
             // Create subgraph
             vector<v_id> vMap;
 
-            auto subgraph = graph.subgraph(vertices, &vMap);
+            auto subgraph = v2::subgraphDegen(graph, vertices, degenRank.data());
 
             auto newSolution = pseudoCliqueNaive(subgraph, alpha);
             if (newSolution.size > solution.size) {

@@ -63,7 +63,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
         if (vertices.size() > solution.size) {
             vector<v_id> vMap;
 
-            auto subgraph = graph.subgraph(vertices, &vMap);
+            auto subgraph = v2::subgraphDegen(graph, vertices, degenRank.data());
 
             auto newSolution = quasiCliqueNaive(subgraph, alpha);
             if (newSolution.size > solution.size) {

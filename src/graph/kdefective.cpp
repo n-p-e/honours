@@ -162,8 +162,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
 
         if (vertices.size() > solution.size) {
             // Create subgraph
-            vector<v_id> vMap;
-            auto subgraph = g.subgraph(vertices, &vMap);
+            auto subgraph = v2::subgraphDegen(g, vertices, degenRank.data());
 
             auto newSolution = kDefNaiveV2(subgraph, k);
             if (newSolution.kDefective.size() > solution.kDefective.size()) {
