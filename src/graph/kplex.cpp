@@ -88,7 +88,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
     // Generate a subgraph
     for (v_id u = 0; u < size; u++) {
         // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
-        if (g.degree(u) <= solution.kPlex.size() - k - 1) { continue; }
+        if (g.degree(u) <= solution.kPlex.size() - k) { continue; }
         vector<v_id> vertices;
         vertices.push_back(u);
         included[u] = 1;
@@ -96,7 +96,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id v : neighbours) {
             if (degenRank[v] < degenRank[u]) { break; }
-            if (g.degree(v) <= solution.kPlex.size() - k - 1) { continue; }
+            if (g.degree(v) <= solution.kPlex.size() - k) { continue; }
 
             if (!included[v]) {
                 included[v] = 1;
@@ -105,7 +105,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
             if (twoHop) {
                 for (v_id w : g.iterNeighbours(v)) {
                     if (degenRank[w] < degenRank[u]) { break; }
-                    if (g.degree(w) <= solution.kPlex.size() - k - 1) { continue; }
+                    if (g.degree(w) <= solution.kPlex.size() - k) { continue; }
                     if (!included[w]) {
                         included[w] = 1;
                         vertices.push_back(w);
