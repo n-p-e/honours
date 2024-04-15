@@ -214,9 +214,8 @@ GraphV2 subgraphDegen(GraphV2 &g, std::vector<v_int> &vertices, v_int *degenRank
 
     for (v_int u : vertices) {
         for (v_int v : g.iterNeighbours(u)) {
+            if (degenRank[v] < degenRank[u]) { break; }
             if (vMap[v] >= 0) {
-                if (degenRank[v] < degenRank[u]) { break; }
-
                 // reverse will also be pushed
                 edges.push_back(make_pair(vMap[u], vMap[v]));
                 edges.push_back(make_pair(vMap[v], vMap[u]));
