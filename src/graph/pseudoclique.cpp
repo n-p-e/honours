@@ -4,6 +4,7 @@
 #include "graph/types.hpp"
 
 #include <cmath>
+#include <iostream>
 #include <vector>
 
 using std::vector;
@@ -21,16 +22,16 @@ SubgraphResult pseudoCliqueNaive(v2::Graph &graph, double alpha) {
             return {std::move(solution), v_int(solution.size())};
         }
     }
-    return {std::move(solution), v_int(solution.size())};
+    SubgraphResult result{std::move(solution)};
+    return result;
 }
 
 SubgraphResult pseudoClique(v2::Graph &graph, double alpha, bool twoHop) {
-    SubgraphResult solution = {};
+    SubgraphResult solution = pseudoCliqueNaive(graph, alpha);
 
     v_int size = graph.size();
     auto ordering = v2::degenOrdering(graph);
     vector<v_id> degenRank(size, 0);
-    vector<uint8_t> removed(size, 0);
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
     for (v_id i = 0; i < size; i++) {
@@ -42,25 +43,29 @@ SubgraphResult pseudoClique(v2::Graph &graph, double alpha, bool twoHop) {
 
     // Generate a subgraph
     vector<uint8_t> included(size, 0);
-    for (v_id i = 0; i < size; i++) {
-        if (removed[i] || graph.degree(i) <= solution.size) { continue; }
+    for (v_id u = 0; u < size; u++) {
+        if (graph.degree(u) <= floor(solution.size * alpha)) { continue; }
         vector<v_id> vertices;
-        vertices.push_back(i);
-        included[i] = 1;
-        auto neighbours = graph.iterNeighbours(i);
+        vertices.push_back(u);
+        included[u] = 1;
+        auto neighbours = graph.iterNeighbours(u);
         // Add neighbours and two-hop neighbours to subgraph
-        for (v_id j : neighbours) {
-            if (!removed[j]) {
-                if (degenRank[j] < degenRank[i]) { break; }
-                vertices.push_back(j);
-                included[j] = 1;
+        for (v_id v : neighbours) {
+            if (degenRank[v] < degenRank[u]) { break; }
+            if (graph.degree(v) <= floor(solution.size * alpha)) { continue; }
+
+            if (!included[v]) {
+                included[v] = 1;
+                vertices.push_back(v);
             }
             if (twoHop) {
-                for (v_int k : graph.iterNeighbours(j)) {
-                    if (degenRank[k] < degenRank[i]) { break; }
-                    if (!included[k]) {
-                        included[k] = 1;
-                        vertices.push_back(k);
+                for (v_int w : graph.iterNeighbours(v)) {
+                    if (degenRank[w] < degenRank[u]) { break; }
+                    if (graph.degree(w) <= floor(solution.size * alpha)) { continue; }
+
+                    if (!included[w]) {
+                        included[w] = 1;
+                        vertices.push_back(w);
                     }
                 }
             }

@@ -3,6 +3,8 @@
 /.idea
 /.vscode
 /dataset
-/evaluation/logs/
+/evaluation/logs/*
+/evaluation/results/*
+!/evaluation/**/.keep
 
 /output*.json

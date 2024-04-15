@@ -7,7 +7,6 @@
 #include <iostream>
 #include <string>
 
-#include "graph/graph.hpp"
 #include "graph/graphv2.hpp"
 #include "graph/kdefective.hpp"
 #include "graph/kplex.hpp"
@@ -79,15 +78,15 @@ int main(int argc, char **argv) {
         auto start = chrono::high_resolution_clock::now();
         if (algo == "v1") {
             result = gm::kPlexDegen(graph, k);
-            cout << "[kPlexDegen] Found k-plex of size " << result.kPlex.size() << "\n"
+            cout << "[kPlexDegen] Result size = " << result.kPlex.size() << "\n"
                  << "    upper bound: " << result.ub << endl;
         } else if (algo == "v2") {
             result = gm::kPlexV2(graph, k, false);
-            cout << "[kPlexV2] Found k-plex of size " << result.kPlex.size() << "\n"
+            cout << "[kPlexV2] Result size = " << result.kPlex.size() << "\n"
                  << "    upper bound: " << result.ub << endl;
         } else {
             result = gm::kPlexV2(graph, k, true);
-            cout << "[kPlexTwoHop] Found k-plex of size " << result.kPlex.size() << "\n"
+            cout << "[kPlexTwoHop] Result size = " << result.kPlex.size() << "\n"
                  << "    upper bound: " << result.ub << endl;
         }
         auto end = chrono::high_resolution_clock::now();
@@ -119,7 +118,7 @@ int main(int argc, char **argv) {
         } else {
             result = gm::kDefDegenV2(graph, k, algo == "twohop");
         }
-        cout << "[kDef] found k-defective-clique of size " << result.size << endl;
+        cout << "[kDef] Result size = " << result.size << endl;
         auto end = chrono::high_resolution_clock::now();
         cout << "[timer] " << chrono::duration_cast<chrono::microseconds>(end - start).count()
              << " microseconds" << endl;
@@ -141,7 +140,7 @@ int main(int argc, char **argv) {
         } else {
             result = gm::printTimer([&]() { return gm::quasiClique(graph, alpha, algo == "twohop"); });
         }
-        cout << format("[quasiClique] result size {}\n", result.size);
+        cout << format("[quasiClique] Result size = {}\n", result.size);
         if (!gm::validateQuasiClique(graph, result.subgraph, alpha)) {
             cout << "ERROR: !!!!!!Invalid quasiclique!!!!!!" << endl;
             exit(1);
@@ -160,7 +159,7 @@ int main(int argc, char **argv) {
         } else {
             result = gm::printTimer([&]() { return gm::pseudoClique(graph, alpha, algo == "twohop"); });
         }
-        cout << format("[pseudoClique] result size {}\n", result.size);
+        cout << format("[pseudoClique] Result size = {}\n", result.size);
         if (!gm::validatePseudoClique(graph, result.subgraph, alpha)) {
             cout << "ERROR: !!!!!!Invalid pseudoclique!!!!!!" << endl;
             exit(1);

@@ -1,6 +1,5 @@
 #include "graph/kplex.hpp"
 
-#include "graph/graph.hpp"
 #include "graph/graphv2.hpp"
 #include "graph/types.hpp"
 #include "heap.hpp"
@@ -72,19 +71,6 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
 
     cout << "Initial solution size = " << initialSize << endl;
 
-    // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
-    std::vector<int> removed(size, 0);
-    int n_removed = 0;
-    // add to k-def
-    for (v_id i = 0; i < size; i++) {
-        if (g.degree(i) <= initialSize - k) {
-            removed[i] = 1;
-            n_removed++;
-        }
-    }
-    cout << "deleted " << n_removed << " vertices, size " << size << " -> " << (size - n_removed)
-         << endl;
-
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
@@ -100,25 +86,29 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
     vector<uint8_t> included(size, 0);
 
     // Generate a subgraph
-    for (v_id i = 0; i < size; i++) {
-        if (removed[i]) { continue; }
+    for (v_id u = 0; u < size; u++) {
+        // Any vertex with (degree < initialSize - k) definitely won't be in a better answer
+        if (g.degree(u) <= solution.kPlex.size() - k - 1) { continue; }
         vector<v_id> vertices;
-        vertices.push_back(i);
-        included[i] = 1;
-        auto neighbours = g.iterNeighbours(i);
+        vertices.push_back(u);
+        included[u] = 1;
+        auto neighbours = g.iterNeighbours(u);
         // Add neighbours and two-hop neighbours to subgraph
-        for (v_id j : neighbours) {
-            if (degenRank[j] < degenRank[i]) { break; }
-            if (!removed[j]) {
-                included[j] = 1;
-                vertices.push_back(j);
-                if (twoHop) {
-                    for (v_id k : g.iterNeighbours(j)) {
-                        if (degenRank[k] < degenRank[i]) { break; }
-                        if (!removed[k]) {
-                            included[k] = 1;
-                            vertices.push_back(k);
-                        }
+        for (v_id v : neighbours) {
+            if (degenRank[v] < degenRank[u]) { break; }
+            if (g.degree(v) <= solution.kPlex.size() - k - 1) { continue; }
+
+            if (!included[v]) {
+                included[v] = 1;
+                vertices.push_back(v);
+            }
+            if (twoHop) {
+                for (v_id w : g.iterNeighbours(v)) {
+                    if (degenRank[w] < degenRank[u]) { break; }
+                    if (g.degree(w) <= solution.kPlex.size() - k - 1) { continue; }
+                    if (!included[w]) {
+                        included[w] = 1;
+                        vertices.push_back(w);
                     }
                 }
             }
@@ -148,7 +138,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
             for (size_t i = 0; i < newSolution.kPlex.size(); i++) {
                 newSolution.kPlex[i] = vertices[newSolution.kPlex[i]];
             }
-            // cout << "Found better solution" << endl;
+            // cout << "Found better solution size = " << newSolution.kPlex.size() << endl;
             solution = std::move(newSolution);
         }
 

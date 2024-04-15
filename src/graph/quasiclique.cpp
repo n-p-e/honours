@@ -1,8 +1,10 @@
 #include "graph/quasiclique.hpp"
 #include "graph/graphv2.hpp"
 #include "graph/types.hpp"
+#include "heap.hpp"
 
 #include <cmath>
+#include <iostream>
 #include <vector>
 
 using std::vector;
@@ -11,20 +13,39 @@ namespace gm {
 
 SubgraphResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
     v_int size = graph.size();
-    auto ordering = v2::degenOrdering(graph);
     std::vector<v_int> solution{};
-    for (v_int i = size - 1; i >= 0; i--) {
-        solution.push_back(ordering[i]);
-        if (!validateQuasiClique(graph, solution, alpha)) {
-            solution.pop_back();
-            return {std::move(solution)};
+    std::vector<v_int> degrees;
+    degrees.reserve(size);
+    for (v_id i = 0; i < size; i++) { degrees.push_back(graph.degree(i)); }
+    std::vector<v_int> removed(size, 0);
+
+    GraphLinearHeap heap(size, size, degrees);
+    for (v_int i = 0; i < size; i++) {
+        auto p = heap.popMin();
+        v_int v = p.first, minDeg = p.second;
+        if (minDeg >= floor((size - i + 1) * alpha)
+            && floor((size - i + 1) * alpha) > solution.size()) {
+            solution = {};
+            for (v_id j = 0; j < size; j++) {
+                if (!removed[j]) { solution.push_back(j); }
+            }
         }
+
+        for (v_int w : graph.iterNeighbours(v)) {
+            if (!removed[w]) {
+                degrees[w] -= 1;
+                bool res = heap.decrement(w, 1);
+                GM_ASSERT(res, "should success");
+            }
+        }
+        removed[v] = 1;
     }
     return {std::move(solution)};
 }
 
 SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
-    SubgraphResult solution{};
+    SubgraphResult solution = quasiCliqueNaive(graph, alpha);
+    std::cout << "Initial solution size = " << solution.size << "\n";
 
     v_int size = graph.size();
     auto ordering = v2::degenOrdering(graph);
@@ -38,44 +59,52 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
         });
     }
 
+    vector<v_id> vMap(size, -1);
     vector<int> included(size, 0);
-    for (v_id i = 0; i < size; i++) {
-        if (graph.degree(i) <= solution.size) { continue; }
+    for (v_id u = 0; u < size; u++) {
+        if (graph.degree(u) <= floor(solution.size * alpha - 1)) { continue; }
         vector<v_id> vertices;
-        vertices.push_back(i);
-        included[i] = 1;
-        auto neighbours = graph.iterNeighbours(i);
+        vertices.push_back(u);
+        included[u] = 1;
+        auto neighbours = graph.iterNeighbours(u);
         // Add neighbours and two-hop neighbours to subgraph
-        for (v_id j : neighbours) {
-            if (degenRank[j] < degenRank[i]) { break; }
-            vertices.push_back(j);
-            included[j] = 1;
+        for (v_id v : neighbours) {
+            if (degenRank[v] < degenRank[u]) { break; }
+            if (graph.degree(v) <= floor(solution.size * alpha - 1)) { continue; }
+
+            if (!included[v]) {
+                included[v] = 1;
+                vertices.push_back(v);
+            }
             if (twoHop) {
-                for (v_int k : graph.iterNeighbours(j)) {
-                    if (degenRank[k] < degenRank[i]) { break; }
-                    if (!included[k]) {
-                        included[k] = 1;
-                        vertices.push_back(k);
+                for (v_int w : graph.iterNeighbours(v)) {
+                    if (degenRank[w] < degenRank[u]) { break; }
+                    if (graph.degree(w) <= floor(solution.size * alpha - 1)) { continue; }
+
+                    if (!included[w]) {
+                        included[w] = 1;
+                        vertices.push_back(w);
                     }
                 }
             }
         }
-        if (vertices.size() > solution.size) {
-            vector<v_id> vMap;
-
+        if (vertices.size() > solution.subgraph.size()) {
             auto subgraph = v2::subgraphDegen(graph, vertices, degenRank.data());
 
             auto newSolution = quasiCliqueNaive(subgraph, alpha);
-            if (newSolution.size > solution.size) {
+            if (newSolution.size > solution.subgraph.size()) {
                 for (size_t i = 0; i < newSolution.size; i++) {
                     newSolution.subgraph[i] = vertices[newSolution.subgraph[i]];
                 }
-                // cout << "Found better solution" << endl;
+                std::cout << "Found better solution " << newSolution.size << "\n";
                 solution = std::move(newSolution);
             }
         }
 
-        for (auto v : vertices) { included[v] = 0; }
+        for (auto v : vertices) {
+            vMap[v] = -1;
+            included[v] = 0;
+        }
     }
     return solution;
 }

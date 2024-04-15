@@ -41,7 +41,7 @@ kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
         }
     }
     result.kDefective = std::move(solution);
-    result.size = solution.size();
+    result.size = result.kDefective.size();
     return result;
 }
 
@@ -119,7 +119,7 @@ kDefResult kDefDegen(Graph &g, v_int k) {
 }
 
 kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
-    kDefResult solution{};
+    kDefResult solution = kDefNaiveV2(g, k);
     v_int size = g.size();
     vector<v_id> ordering = degenOrdering(g);
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
@@ -136,25 +136,29 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
     vector<uint8_t> included(size, 0);
     // Generate a subgraph
     // parallelise w/ openmp
-    for (v_id i = 0; i < size; i++) {
-        if (g.degree(i) <= solution.size) { continue; }
+    for (v_id u = 0; u < size; u++) {
+        if (g.degree(u) <= solution.size - k - 1) { continue; }
         vector<v_id> vertices;
-        vertices.push_back(i);
-        included[i] = 1;
-        auto neighbours = g.iterNeighbours(i);
+        vertices.push_back(u);
+        included[u] = 1;
+        auto neighbours = g.iterNeighbours(u);
         // Add neighbours and two-hop neighbours to subgraph
-        for (v_id j : neighbours) {
-            if (degenRank[j] < degenRank[i]) { break; }
-            if (!included[j]) {
-                included[j] = 1;
-                vertices.push_back(j);
+        for (v_id v : neighbours) {
+            if (degenRank[v] < degenRank[u]) { break; }
+            if (g.degree(v) <= solution.size - k - 1) { continue; }
+
+            if (!included[v]) {
+                included[v] = 1;
+                vertices.push_back(v);
             }
             if (twoHop) {
-                for (v_int k : g.iterNeighbours(j)) {
-                    if (degenRank[k] < degenRank[i]) { break; }
-                    if (!included[k]) {
-                        included[k] = 1;
-                        vertices.push_back(k);
+                for (v_int w : g.iterNeighbours(v)) {
+                    if (degenRank[w] < degenRank[u]) { break; }
+                    if (g.degree(w) <= solution.size - k - 1) { continue; }
+
+                    if (!included[w]) {
+                        included[w] = 1;
+                        vertices.push_back(w);
                     }
                 }
             }
@@ -169,7 +173,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
                 for (size_t i = 0; i < newSolution.kDefective.size(); i++) {
                     newSolution.kDefective[i] = vertices[newSolution.kDefective[i]];
                 }
-                cout << "Found better solution of size " << newSolution.size << endl;
+                cout << "Found better solution of size " << newSolution.kDefective.size() << endl;
                 solution = std::move(newSolution);
             }
         }
