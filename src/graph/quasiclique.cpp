@@ -23,8 +23,8 @@ SubgraphResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
     for (v_int i = 0; i < size; i++) {
         auto p = heap.popMin();
         v_int v = p.first, minDeg = p.second;
-        if (minDeg >= floor((size - i + 1) * alpha)
-            && floor((size - i + 1) * alpha) > solution.size()) {
+        if (minDeg >= floor((size - i) * alpha)
+            && floor((size - i) * alpha) > solution.size()) {
             solution = {};
             for (v_id j = 0; j < size; j++) {
                 if (!removed[j]) { solution.push_back(j); }
