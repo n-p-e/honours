@@ -82,7 +82,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
         });
     }
 
-    vector<v_id> vMap(size, -1);
+    // vector<v_id> vMap(size, -1);
     vector<uint8_t> included(size, 0);
 
     // Generate a subgraph
@@ -115,7 +115,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
         }
         if (vertices.size() <= solution.kPlex.size()) {
             for (auto v : vertices) {
-                vMap[v] = -1;
+                // vMap[v] = -1;
                 included[v] = 0;
             }
             continue;
@@ -125,11 +125,11 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
         // v2::Graph subgraph = g.subgraph(vertices);
         v2::Graph subgraph = v2::subgraphDegen(g, vertices, degenRank.data());
         // auto subgraph = v2::subgraphDegen(g, vertices, &vMap, degenRank.data());
-        v_id nextId = 0;
-        for (v_id v : vertices) {
-            vMap[v] = nextId;
-            nextId++;
-        }
+        // v_id nextId = 0;
+        // for (v_id v : vertices) {
+        //     vMap[v] = nextId;
+        //     nextId++;
+        // }
 
         // cout << "calculating subgraph (size=" << subgraph.size() << ")" << endl;
         auto newSolution = kPlexDegen(subgraph, k);
@@ -144,7 +144,7 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
 
         // reset:
         for (auto v : vertices) {
-            vMap[v] = -1;
+            // vMap[v] = -1;
             included[v] = 0;
         }
     }
