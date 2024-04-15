@@ -37,6 +37,7 @@ KPlexDegenResult kPlexDegen(v2::Graph &g, int64_t k) {
             for (v_id j = 0; j < size; j++) {
                 if (!removed[j]) { result.kPlex.push_back(j); }
             }
+            break;
         }
 
         // Line 7-8

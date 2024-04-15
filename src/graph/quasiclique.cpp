@@ -23,12 +23,12 @@ SubgraphResult quasiCliqueNaive(v2::Graph &graph, double alpha) {
     for (v_int i = 0; i < size; i++) {
         auto p = heap.popMin();
         v_int v = p.first, minDeg = p.second;
-        if (minDeg >= floor((size - i) * alpha)
-            && floor((size - i) * alpha) > solution.size()) {
+        if (minDeg >= ceil((size - i) * alpha) && size - i > solution.size()) {
             solution = {};
             for (v_id j = 0; j < size; j++) {
                 if (!removed[j]) { solution.push_back(j); }
             }
+            break;
         }
 
         for (v_int w : graph.iterNeighbours(v)) {
@@ -62,7 +62,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
     vector<v_id> vMap(size, -1);
     vector<int> included(size, 0);
     for (v_id u = 0; u < size; u++) {
-        if (graph.degree(u) <= floor(solution.size * alpha - 1)) { continue; }
+        if (graph.degree(u) <= ceil(solution.size * alpha - 1)) { continue; }
         vector<v_id> vertices;
         vertices.push_back(u);
         included[u] = 1;
@@ -70,7 +70,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id v : neighbours) {
             if (degenRank[v] < degenRank[u]) { break; }
-            if (graph.degree(v) <= floor(solution.size * alpha - 1)) { continue; }
+            if (graph.degree(v) <= ceil(solution.size * alpha - 1)) { continue; }
 
             if (!included[v]) {
                 included[v] = 1;
@@ -79,7 +79,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
             if (twoHop) {
                 for (v_int w : graph.iterNeighbours(v)) {
                     if (degenRank[w] < degenRank[u]) { break; }
-                    if (graph.degree(w) <= floor(solution.size * alpha - 1)) { continue; }
+                    if (graph.degree(w) <= ceil(solution.size * alpha - 1)) { continue; }
 
                     if (!included[w]) {
                         included[w] = 1;
