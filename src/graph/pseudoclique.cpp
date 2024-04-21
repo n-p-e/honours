@@ -15,11 +15,20 @@ SubgraphResult pseudoCliqueNaive(v2::Graph &graph, double alpha) {
     v_int size = graph.size();
     auto ordering = v2::degenOrdering(graph);
     std::vector<v_int> solution{};
-    for (v_int i = size - 1; i >= 0; i--) {
-        solution.push_back(ordering[i]);
-        if (!validatePseudoClique(graph, solution, alpha)) {
+    std::vector<uint8_t> included(size, 0);
+    v_int totalEdges = 0;
+    for (v_int idx = size - 1; idx >= 0; idx--) {
+        v_id u = ordering[idx];
+        v_int addedEdges = 0;
+        solution.push_back(u);
+        included[u] = 1;
+        for (v_int v : graph.iterNeighbours(u)) {
+            if (included[v]) { addedEdges++; }
+        }
+        totalEdges += addedEdges;
+        if (totalEdges < double(solution.size() * (solution.size() - 1)) / 2 * alpha) {
             solution.pop_back();
-            return {std::move(solution), v_int(solution.size())};
+            break;
         }
     }
     SubgraphResult result{std::move(solution)};

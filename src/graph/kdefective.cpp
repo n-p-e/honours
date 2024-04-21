@@ -31,11 +31,19 @@ kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
     kDefResult result{};
     v_int size = g.size();
     auto ordering = degenOrdering(g);
+    std::vector<uint8_t> included(size, 0);
     std::vector<v_id> solution{};
+    v_int totalEdges = 0;
     for (v_int idx = size - 1; idx >= 0; idx--) {
         v_id u = ordering[idx];
+        v_int addedEdges = 0;
         solution.push_back(u);
-        if (!checkKDefV2(g, solution, k)) {
+        included[u] = 1;
+        for (v_int v : g.iterNeighbours(u)) {
+            if (included[v]) { addedEdges++; }
+        }
+        totalEdges += addedEdges;
+        if (totalEdges < v_int(solution.size() * (solution.size() - 1)) / 2 - k) {
             solution.pop_back();
             break;
         }
