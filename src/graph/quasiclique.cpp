@@ -71,7 +71,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
         // Add neighbours and two-hop neighbours to subgraph
         for (v_id v : neighbours) {
             if (degenRank[v] < degenRank[u]) { break; }
-            if (graph.degree(v) <= ceil((solution.size - 1) * alpha)) { continue; }
+            if (graph.degree(v) <= ((solution.size - 1) * alpha)) { continue; }
 
             if (!included[v]) {
                 included[v] = 1;
@@ -80,7 +80,7 @@ SubgraphResult quasiClique(v2::Graph &graph, double alpha, bool twoHop) {
             if (twoHop) {
                 for (v_int w : graph.iterNeighbours(v)) {
                     if (degenRank[w] < degenRank[u]) { break; }
-                    if (graph.degree(w) <= ceil((solution.size - 1) * alpha)) { continue; }
+                    if (graph.degree(w) <= ((solution.size - 1) * alpha)) { continue; }
 
                     if (!included[w]) {
                         included[w] = 1;
