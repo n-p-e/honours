@@ -2,6 +2,7 @@
 #include "graph/graph.hpp"
 #include "graph/graphv2.hpp"
 #include "graph/types.hpp"
+#include "util.hpp"
 #include <iostream>
 #include <vector>
 
@@ -40,10 +41,12 @@ kDefResult kDefNaiveV2(v2::GraphV2 &g, v_int k) {
         solution.push_back(u);
         included[u] = 1;
         for (v_int v : g.iterNeighbours(u)) {
-            if (included[v]) { addedEdges++; }
+            if (included[v] && u != v) { addedEdges++; }
         }
         totalEdges += addedEdges;
-        if (totalEdges < v_int(solution.size() * (solution.size() - 1)) / 2 - k) {
+        // cout << totalEdges << " - ";
+        // printVector(solution);
+        if (totalEdges + k < v_int(solution.size() * (solution.size() - 1)) / 2) {
             solution.pop_back();
             break;
         }
@@ -172,7 +175,7 @@ kDefResult kDefDegenV2(v2::GraphV2 &g, v_int k, bool twoHop) {
             }
         }
 
-        if (vertices.size() > solution.size) {
+        if (int(vertices.size()) > solution.size) {
             // Create subgraph
             auto subgraph = v2::subgraphDegen(g, vertices, degenRank.data());
 

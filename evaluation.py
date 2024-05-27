@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import concurrent.futures as futures
+import tempfile
 import time
 from datetime import datetime
 import json
@@ -9,28 +10,38 @@ import re
 import subprocess
 import sys
 import traceback
+import threading
 from pathlib import Path
 from typing import Optional, TypedDict
+from functools import lru_cache
+import uuid
 
 import pandas as pd
 
+root_dir = Path(__file__).parent.parent
 data_dir = Path(__file__).parent / "dataset"
 logs_dir = Path(__file__).parent / "evaluation" / "logs"
 results_dir = Path(__file__).parent / "evaluation" / "results"
-algo = "naive"
-k = 5
-alpha = 0.9
-prog = "quasi"
+# prog = "quasi"
+# algo = "v2"
+# k = 10
+# alpha = 0.9
+ALGOS = ["v2", "twohop", "naive"]
+PROGS = ["kplex", "kdef", "quasi", "pseudo"]
+# PROGS = ["kdef"]
+# (k, alpha)[]
+OPTIONS = [(5, 0.9), (10, 0.8), (15, 0.75)]
 timeout_sec = 300
-max_workers = 8
-exact_prog = Path(__file__).parent.parent / "Maximum-kPlex" / "kPlexS"
+max_workers = 6
 
 run_date = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 out_path = results_dir / f"output_{run_date}.json"
+outlock = threading.RLock()
 
 
 class Evaluation(TypedDict):
     dataset: str
+    prog: str
     n: int
     m: int
     algo: str
@@ -68,30 +79,39 @@ def evaluation_loop():
     futs = []
 
     pool = futures.ThreadPoolExecutor(max_workers=max_workers)
+    outfile = open(out_path, "w")
     try:
         for dataset in dataset_files:
+            for prog in PROGS:
+                for k, alpha in OPTIONS:
+                    for algo in ALGOS:
 
-            def task(dataset):
-                try:
-                    result = evaluate(
-                        exe,
-                        dataset,
-                        prog=prog,
-                        algo=algo,
-                        k=k,
-                        timeout_sec=timeout_sec,
-                    )
-                except Exception:
-                    traceback.print_exc()
-                results.append(result)
+                        def task(dataset, prog, k, alpha, algo):
+                            result = None
+                            try:
+                                result = evaluate(
+                                    exe,
+                                    dataset,
+                                    prog=prog,
+                                    algo=algo,
+                                    k=k,
+                                    alpha=alpha,
+                                    timeout_sec=timeout_sec,
+                                )
+                            except Exception:
+                                traceback.print_exc()
+                            # results.append(result)
+                            if result:
+                                with outlock:
+                                    outfile.write(json.dumps(result) + "\n")
+                            return result
 
-            future = pool.submit(task, dataset)
-            futs.append(future)
+                        future = pool.submit(task, dataset, prog, k, alpha, algo)
+                        futs.append(future)
+
         futures.wait(futs)
     finally:
-        with open(out_path, "w") as outfile:
-            json.dump(results, outfile)
-            outfile.write("\n")
+        outfile.close()
         pool.shutdown(wait=False)
 
 
@@ -113,9 +133,9 @@ def evaluate(
 ) -> Optional[Evaluation]:
     dataset_name = str(dataset_file).removesuffix("/edges.txt")
     n, m = dataset_size(dataset_file)
-    print(f"[Evaluate] Running on dataset {dataset_name} ({n=}, {m=})")
+    print(f"[Evaluate] Running on {prog} dataset {dataset_name} ({n=}, {m=})")
     stdout_path = (
-        logs_dir / f"out-{dataset_name.rsplit('/', 1)[-1]}-{int(time.time())}.txt"
+        logs_dir / f"out-{dataset_name.rsplit('/', 1)[-1]}-{int(time.time())}-{uuid.uuid4()}.txt"
     )
     try:
         with open(stdout_path, "ab+") as stdout:
@@ -133,7 +153,7 @@ def evaluate(
                         "--alpha",
                         alpha,
                         "-g",
-                        dataset_file,
+                        dataset_name,
                     ],
                 ),
                 stdout=stdout,
@@ -144,6 +164,7 @@ def evaluate(
         print(f"[Evaluate] timeout for dataset {dataset_name}")
         return Evaluation(
             dataset=dataset_name,
+            prog=prog,
             algo=algo,
             n=n,
             m=m,
@@ -178,10 +199,43 @@ def evaluate(
 
     exact_size = None
     exact_runtime_ms = None
-    if prog == "kplex":
+    if prog in ("kplex", "kdef", "quasi"):
+        exact_size, exact_runtime_ms = run_exact(
+            prog, dataset_file, k, alpha, lower_bound=solution_size
+        )
+    print(
+        f"[Evaluate] done {prog} {dataset_name}, size={solution_size} runtime={runtime_ms:.3f}ms exact_size={exact_size}"
+    )
+
+    return Evaluation(
+        dataset=dataset_name,
+        prog=prog,
+        algo=algo,
+        n=n,
+        m=m,
+        k=k,
+        alpha=alpha,
+        runtime_ms=runtime_ms,
+        improved_solution=improved_solution,
+        initial_size=initial_size,
+        solution_size=solution_size,
+        exact_size=exact_size,
+        exact_runtime_ms=exact_runtime_ms,
+    )
+
+
+@lru_cache(maxsize=100000)
+def run_exact(program, dataset, k, alpha, lower_bound=0):
+    exact_size = None
+    exact_runtime_ms = None
+
+    dataset = str(dataset).removesuffix("/edges.txt")
+
+    if program == "kplex":
+        exact_prog = root_dir / "Maximum-kPlex" / "kPlexS"
         try:
             exact_process = subprocess.run(
-                map(str, [exact_prog, "-g", dataset_name, "-k", k]),
+                map(str, [exact_prog, "-g", dataset, "-k", k]),
                 capture_output=True,
                 encoding="utf-8",
                 timeout=timeout_sec,
@@ -197,24 +251,82 @@ def evaluate(
         if match:
             exact_size = int(match.group(1))
             exact_runtime_ms = float(match.group(2).replace(",", "")) / 1000
-    print(
-        f"[Evaluate] done, size={solution_size} runtime={runtime_ms:.3f}ms exact_size={exact_size}"
-    )
-
-    return Evaluation(
-        dataset=dataset_name,
-        algo=algo,
-        n=n,
-        m=m,
-        k=k,
-        alpha=alpha,
-        runtime_ms=runtime_ms,
-        improved_solution=improved_solution,
-        initial_size=initial_size,
-        solution_size=solution_size,
-        exact_size=exact_size,
-        exact_runtime_ms=exact_runtime_ms,
-    )
+    elif program == "kdef":
+        exact_prog = root_dir / "Maximum-kDC" / "kDefectiveClique"
+        try:
+            exact_process = subprocess.run(
+                map(str, [exact_prog, "-g", dataset, "-k", k]),
+                capture_output=True,
+                encoding="utf-8",
+                timeout=timeout_sec,
+            )
+            exact_output = str(exact_process.stdout)
+        except subprocess.TimeoutExpired:
+            exact_output = ""
+        match = re.search(
+            r"Maximum kDefectiveClique Size: (\d+), Total Time: ([\d\.,]+)",
+            exact_output,
+            re.MULTILINE,
+        )
+        if match:
+            exact_size = int(match.group(1))
+            exact_runtime_ms = float(match.group(2).replace(",", "")) / 1000
+    elif program == "quasi":
+        # convert graph format
+        with tempfile.NamedTemporaryFile() as tf, tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run(
+                map(str, [compile(), "-p", "convert", "-g", dataset, tf.name])
+            )
+            exact_prog = (
+                root_dir / "SIGMOD24-MQCE" / "code" / "FastQC" / "build" / "FastQC"
+            )
+            start_at = time.time()
+            try:
+                exact_process = subprocess.run(
+                    map(
+                        str,
+                        [
+                            exact_prog,
+                            "-f",
+                            tf.name,
+                            "-g",
+                            alpha,
+                            "-u",
+                            lower_bound,
+                            "-q",
+                            1,
+                        ],
+                    ),
+                    capture_output=True,
+                    encoding="utf-8",
+                    timeout=timeout_sec,
+                    cwd=tmpdir,
+                )
+                exact_output = str(exact_process.stdout)
+            except subprocess.TimeoutExpired:
+                exact_output = ""
+            match = re.search(
+                r"Running Time: ([\d\.,]+)s",
+                exact_output,
+                re.MULTILINE,
+            )
+            # if match:
+            #     exact_runtime_ms = float(match.group(1).replace(",", "")) / 1000
+            # else:
+            #     exact_runtime_ms = None
+            exact_runtime_ms = 1000 * (time.time() - start_at)
+            exact_outfile = tmpdir + "/output"
+            if not os.path.exists(exact_outfile):
+                return None, None
+            with open(exact_outfile, "r") as out:
+                sizes = [
+                    int(line.split()[0]) for line in out.readlines() if line.strip()
+                ]
+                if sizes:
+                    exact_size = max(sizes)
+                else:
+                    exact_size = None
+    return exact_size, exact_runtime_ms
 
 
 def dataset_size(file: Path):

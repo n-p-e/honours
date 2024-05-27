@@ -8,3 +8,6 @@
 !/evaluation/**/.keep
 
 /output*.json
+*.log
+output.tex
+evaluation/*.png

@@ -13,6 +13,7 @@
 #include "graph/pseudoclique.hpp"
 #include "graph/quasiclique.hpp"
 #include "graph/types.hpp"
+#include "graph/convert.hpp"
 #include "util.hpp"
 
 using namespace std;
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
         cout << "[input graph] " << graph << endl;
         gm::KPlexDegenResult result;
         auto start = chrono::high_resolution_clock::now();
-        if (algo == "v1") {
+        if (algo == "naive") {
             result = gm::kPlexDegen(graph, k);
             cout << "[kPlexDegen] Result size = " << result.kPlex.size() << "\n"
                  << "    upper bound: " << result.ub << endl;
@@ -164,6 +165,8 @@ int main(int argc, char **argv) {
             cout << "ERROR: !!!!!!Invalid pseudoclique!!!!!!" << endl;
             exit(1);
         }
+    } else if (program == "convert") {
+        gm::convertGraph(graphPath, argv[optind]);
     }
 
     return 0;

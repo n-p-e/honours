@@ -6,6 +6,7 @@
 #include "util.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 #include <unordered_set>
 #include <vector>
 
@@ -30,9 +31,13 @@ KPlexDegenResult kPlexDegen(v2::Graph &g, int64_t k) {
         auto p = heap.popMin();
         v_id v = p.first;
         v_id minDeg = p.second;
-        // Line 5-6
+
+        // Upper bound
+        int32_t ub = std::min(minDeg + k, size - i);
+        if (ub > result.ub) { result.ub = ub; }
+
         // All nodes that's not removed form a k-plex
-        if (minDeg + k >= size - i + 1 && size - i + 1 > result.kPlex.size()) {
+        if (minDeg + k >= size - i) {
             result.kPlex = {};
             for (v_id j = 0; j < size; j++) {
                 if (!removed[j]) { result.kPlex.push_back(j); }
@@ -40,12 +45,6 @@ KPlexDegenResult kPlexDegen(v2::Graph &g, int64_t k) {
             break;
         }
 
-        // Line 7-8
-        // Upper bound
-        int32_t ub = std::min(minDeg + k, size - i + 1);
-        if (ub > result.ub) { result.ub = ub; }
-
-        // Line 9
         // Remove current node to start next iteration
         auto neighbours = g.iterNeighbours(v);
         for (v_id w : neighbours) {
@@ -64,15 +63,13 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
     v_int size = g.size();
     auto initialSolution = kPlexDegen(g, k);
     v_int initialSize = initialSolution.kPlex.size();
-    if (initialSize == initialSolution.ub) {
-        // result == ub meaning found the best solution
-        return initialSolution;
-    }
     KPlexDegenResult solution = initialSolution;
 
     cout << "Initial solution size = " << initialSize << endl;
 
     vector<v_id> ordering = degenOrdering(g);
+    // for (size_t i = 0; i < ordering.size(); i++) { cout << ordering[i] << " "; }
+    // cout << "\n";
     vector<v_id> degenRank(size, 0); // vertex id -> degeneracy rank from 0 to (n - 1)
     for (v_int i = 0; i < size; i++) { degenRank[ordering[i]] = i; }
     // order neighbours by degeneracy ordering (reversed)
@@ -114,6 +111,9 @@ KPlexDegenResult kPlexV2(v2::GraphV2 &g, int64_t k, bool twoHop) {
                 }
             }
         }
+        // cout << "u=" << u << " ";
+        // for (size_t i = 0; i < vertices.size(); i++) { cout << vertices[i] << " "; }
+        // cout << "\n";
         if (vertices.size() <= solution.kPlex.size()) {
             for (auto v : vertices) {
                 // vMap[v] = -1;
